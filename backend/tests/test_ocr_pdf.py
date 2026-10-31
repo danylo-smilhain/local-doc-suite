@@ -10,8 +10,11 @@ pytestmark = needs_tesseract
 
 
 def test_scanned_pdf_to_txt_runs_ocr(api, files):
-    _, data = api.roundtrip(fx.scanned_pdf(files), "txt")
-    assert fx.OCR_WORD in data.decode("utf-8").upper()
+    # A full page, not a single word: see fixtures.SCANNED_PAGE_LINES.
+    _, data = api.roundtrip(fx.scanned_page_pdf(files), "txt")
+    text = data.decode("utf-8").upper()
+    assert fx.OCR_WORD in text
+    assert "SUPPLIER" in text
 
 
 @pytest.mark.skipif(shutil.which("ocrmypdf") is not None,

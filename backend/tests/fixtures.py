@@ -78,6 +78,43 @@ def scanned_pdf(directory: Path, name: str = "scan.pdf", word: str = OCR_WORD) -
     return path
 
 
+# A full scanned page of English prose. OCR picks the language order from the
+# letters it sees (app.ocr._choose_ocr_lang_order) only once a page has 200+
+# letters; a lone short word like "INVOICE" can come out in look-alike
+# Cyrillic when Ukrainian is installed and tried first.
+SCANNED_PAGE_LINES = [
+    f"{OCR_WORD} 2024",
+    "The supplier delivered the goods on time and",
+    "the customer paid the full amount in cash.",
+    "Please keep this document for your records,",
+    "it confirms payment for services rendered.",
+    "The supplier delivered the goods on time and",
+    "the customer paid the full amount in cash.",
+    "Please keep this document for your records,",
+    "it confirms payment for services rendered.",
+]
+
+
+def scanned_page_pdf(directory: Path, name: str = "page_scan.pdf") -> Path:
+    """A PDF page that is only a picture of a full page of English text."""
+    import fitz
+    from PIL import Image, ImageDraw
+    png = directory / (name + ".png")
+    img = Image.new("RGB", (1700, 1200), "white")
+    draw = ImageDraw.Draw(img)
+    for i, line in enumerate(SCANNED_PAGE_LINES):
+        draw.text((60, 60 + i * 120), line, fill="black", font=_font())
+    img.save(png)
+    path = directory / name
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_image(fitz.Rect(40, 60, 555, 480), filename=str(png))
+    doc.save(str(path))
+    doc.close()
+    png.unlink()
+    return path
+
+
 def background_pdf(directory: Path, name: str = "background.pdf") -> Path:
     """A page covered by a picture with a line of real text on top."""
     import fitz

@@ -54,6 +54,14 @@ DOCX, EPUB, FB2, MD or TXT.
 PDF or DOCX; TXT → MD; EPUB → EPUB; FB2 → FB2; any text-readable inputs →
 TXT, MD or HTML.
 
+**Known limitation (OCR and look-alike letters):** OCR reads Ukrainian,
+Russian and English together. A word made only of letters that look the same
+in Latin and Cyrillic (for example "INVOICE", "MONEY" or "СОСНА") can come out
+in the other alphabet. For scanned PDFs the converter picks which alphabet to
+prefer from the text it sees, but only once a page has roughly 200 letters, so
+very short scans can be affected. Image → TXT/MD always tries Ukrainian first,
+so English words of this kind can come out in Cyrillic even on full pages.
+
 ## Supported languages
 
 74 interface languages (right-to-left layout for اردو, العربية, فارسی):
