@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # matches backend/Dockerfile (python:3.11-slim)
+      - name: Install system programs (same set as backend/Dockerfile)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            tesseract-ocr tesseract-ocr-eng tesseract-ocr-ukr tesseract-ocr-rus \
+            ocrmypdf ghostscript unpaper pngquant \
+            pandoc libreoffice poppler-utils libgl1 \
+            ffmpeg \
+            fonts-liberation fonts-dejavu \
+            hyphen-ru hyphen-uk hyphen-en-us
+      - name: Install Python dependencies
+        # docxcompose 1.4.0 imports pkg_resources, which setuptools removed in 81.
+        run: pip install -r requirements-dev.txt "setuptools==80.10.2"
+      - run: pytest
+
+  frontend:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22" # matches frontend/Dockerfile (node:22-alpine)
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci && npm test

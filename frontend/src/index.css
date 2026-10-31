@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- Шрифты для CJK (добавлено для мультиязычного интерфейса) ---
+   Иероглифы с одним кодом Unicode в японском, китайском и корейском
+   рисуются по-разному, поэтому для этих языков их системные шрифты
+   ставятся раньше остальных CJK-шрифтов. lang на <html> выставляет App. */
+:lang(ja) .font-sans {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans CJK JP", "Noto Sans JP", sans-serif;
+}
+:lang(ko) .font-sans {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic",
+    "Noto Sans CJK KR", "Noto Sans KR", sans-serif;
+}
+:lang(zh-CN) .font-sans {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+}
+:lang(zh-TW) .font-sans {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei",
+    "Noto Sans CJK TC", "Noto Sans TC", sans-serif;
+}

@@ -1,0 +1,8 @@
+# Development override: mounts the backend sources into the container so code
+# changes do not need an image rebuild.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  backend:
+    volumes:
+      - ./backend:/app
+      - local_storage:/app/storage

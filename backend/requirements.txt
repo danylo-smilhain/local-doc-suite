@@ -1,0 +1,16 @@
+fastapi==0.162.0
+pydantic==2.14.1
+uvicorn==0.54.0
+python-multipart==0.0.32
+PyMuPDF==1.24.14
+pdf2docx==0.5.6
+python-pptx==0.6.21
+python-docx==1.2.0
+docxcompose==1.4.0
+pytesseract==0.3.10
+pypandoc==1.11
+Pillow==13.0.0
+pdf2image==1.16.3
+pypdf==6.21.4
+numpy==2.4.6
+rawpy==0.27.1

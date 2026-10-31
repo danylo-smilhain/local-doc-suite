@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.metrics/
+target/
+.coverage
+htmlcov/
+storage/
+tests/
+pytest.ini
+requirements-dev.txt
+.dockerignore
+Dockerfile
+*.zip

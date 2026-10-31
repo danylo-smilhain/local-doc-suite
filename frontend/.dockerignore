@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.metrics/
+target/
+coverage/
+tests/
+*.zip
+.dockerignore
+Dockerfile
+.env
+.DS_Store
