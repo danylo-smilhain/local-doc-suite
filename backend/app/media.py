@@ -1,4 +1,5 @@
 """Audio/video conversions (MP3, MP4, WebM) through the system ffmpeg/ffprobe."""
+import json
 import logging
 import os
 import shutil
@@ -64,11 +65,12 @@ def _require_ffmpeg(task: str):
         )
 
 
-def _probe_streams(in_path: str, kind: str, label: str) -> bool:
-    """Есть ли в файле потоки вида kind ('a' — звук, 'v' — видео)."""
+def _stream_info(in_path: str, kind: str, label: str) -> dict | None:
+    """Первый поток вида kind ('a' — звук, 'v' — видео): {"codec_name", "pix_fmt"}
+    или None, если таких потоков нет."""
     probe = subprocess.run(
-        ["ffprobe", "-v", "error", "-select_streams", kind,
-         "-show_entries", "stream=index", "-of", "csv=p=0", in_path],
+        ["ffprobe", "-v", "error", "-select_streams", f"{kind}:0",
+         "-show_entries", "stream=codec_name,pix_fmt", "-of", "json", in_path],
         capture_output=True, text=True, errors="replace", timeout=FFPROBE_TIMEOUT
     )
     if probe.returncode != 0:
@@ -76,7 +78,8 @@ def _probe_streams(in_path: str, kind: str, label: str) -> bool:
         # the upload is at fault, not the server, so 422 rather than 500.
         raise EbookInputError(ErrorCode.UNSUPPORTED_FORMAT,
                               f"The file is not a readable {label} file: {_stderr_tail(probe.stderr)}")
-    return bool(probe.stdout.strip())
+    streams = json.loads(probe.stdout or "{}").get("streams") or []
+    return streams[0] if streams else None
 
 
 def _run_ffmpeg(args, out_path: str, out_ext: str, fail_msg: str):
@@ -114,7 +117,7 @@ def video_to_mp3(in_path, out_path, label: str = "MP4"):
     _require_ffmpeg(f"{label} to MP3")
     # Видео без звука проверяем заранее: иначе ffmpeg падает на -map 0:a:0
     # с невнятным "Stream map '0:a:0' matches no streams".
-    if not _probe_streams(in_path, "a", label):
+    if not _stream_info(in_path, "a", label):
         raise EbookInputError(ErrorCode.MEDIA_NO_AUDIO, "The video has no audio track.")
     _run_ffmpeg(
         ["-i", in_path, "-map", "0:a:0", "-vn", "-c:a", "libmp3lame", "-q:a", "2",
@@ -139,44 +142,56 @@ def _ffmpeg_has_encoder(name: str) -> bool:
     return any(line.split()[1:2] == [name] for line in proc.stdout.splitlines())
 
 
-def _require_video(in_path, label: str, target: str):
+def _require_video(in_path, label: str, target: str) -> dict:
+    """The first video stream's info; MEDIA_NO_VIDEO for an audio-only file."""
     _require_ffmpeg(f"{label} to {target}")
-    if not _probe_streams(in_path, "v", label):
+    video = _stream_info(in_path, "v", label)
+    if not video:
         raise EbookInputError(ErrorCode.MEDIA_NO_VIDEO,
                               f"The {label} file has no video stream (audio only); use {label} to MP3.")
+    return video
 
 
-def video_to_mp4(in_path, out_path, label: str = "WebM"):
-    """WebM/TS -> MP4 (H.264 + AAC).
+def mp4_codec_args(video: dict, audio: dict | None, has_x264: bool) -> list[str]:
+    """Copy what every player opens inside MP4, re-encode the rest.
 
-    Скопировать потоки как есть нельзя: VP8/VP9 и Vorbis (WebM), MPEG-2 и
-    MP2/AC-3 (запись с ТВ в TS) в MP4 большинство плееров не открывает,
-    поэтому видео и звук перекодируются.
+    8-bit 4:2:0 H.264 and AAC (most IPTV and modern TV recordings in TS) are
+    moved into MP4 untouched: the time is disk speed, not encoding, and
+    nothing is lost. MPEG-2, HEVC, VP8/VP9, 10-bit or 4:2:2 H.264 are
+    re-encoded, because not every device plays them; so is MP2/AC-3/Vorbis
+    sound. A pure function, so the rule is tested without ffmpeg.
     """
-    _require_video(in_path, label, "MP4")
-
-    if _ffmpeg_has_encoder("libx264"):
+    if video.get("codec_name") == "h264" and video.get("pix_fmt") == "yuv420p":
+        v = ["-c:v", "copy"]
+    elif has_x264:
         # CRF 23 — стандартное качество x264; veryfast заметно быстрее
         # medium при почти том же качестве. Профиль high + yuv420p читают
         # все устройства, включая iPhone и Windows.
-        video = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-                 "-profile:v", "high"]
+        v = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-profile:v", "high"]
     else:
         # Сборка ffmpeg без libx264: MPEG-4 Part 2 тоже открывается почти везде.
-        video = ["-c:v", "mpeg4", "-q:v", "3"]
+        v = ["-c:v", "mpeg4", "-q:v", "3"]
+    if v[1] != "copy":
+        # yuv420p и четные размеры обязательны для H.264: VP9 из браузера
+        # бывает yuv444/с альфа-каналом и с нечетной шириной (запись экрана).
+        v += ["-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p"]
+    a = ["-c:a", "copy"] if audio and audio.get("codec_name") == "aac" else ["-c:a", "aac", "-b:a", "192k"]
+    return v + a
 
+
+def video_to_mp4(in_path, out_path, label: str = "WebM"):
+    """WebM/TS -> MP4 (H.264 + AAC), copying the streams that are already
+    H.264/AAC (see mp4_codec_args)."""
+    video = _require_video(in_path, label, "MP4")
+    audio = _stream_info(in_path, "a", label)
     _run_ffmpeg(
         ["-i", in_path,
          "-map", "0:v:0", "-map", "0:a:0?",          # звук — если он есть
-         *video,
-         # yuv420p и четные размеры обязательны для H.264: VP9 из браузера
-         # бывает yuv444/с альфа-каналом и с нечетной шириной (запись экрана).
-         "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
-         "-c:a", "aac", "-b:a", "192k",
+         *mp4_codec_args(video, audio, _ffmpeg_has_encoder("libx264")),
          "-map_metadata", "0",
          # moov в начале файла: видео начинает играть до полной загрузки.
          "-movflags", "+faststart"],
-        out_path, "mp4", f"ffmpeg could not re-encode {label} to MP4",
+        out_path, "mp4", f"ffmpeg could not convert {label} to MP4",
     )
 
 

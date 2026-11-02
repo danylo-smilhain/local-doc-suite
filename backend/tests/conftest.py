@@ -164,6 +164,24 @@ def is_webm(data: bytes) -> bool:
     return data[:4] == b"\x1a\x45\xdf\xa3" and b"webm" in data[:64]
 
 
+def decoded_md5(path, stream: str) -> str:
+    """MD5 of the decoded frames of the first video ("v") or audio ("a")
+    stream: equal only when the stream was copied, not re-encoded."""
+    import subprocess
+    out = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-map", f"0:{stream}:0", "-f", "md5", "-"],
+                         capture_output=True, text=True, check=True)
+    return out.stdout.strip()
+
+
+def pix_fmt(data: bytes, tmp_dir) -> str:
+    import subprocess
+    path = tmp_dir / "probe_pix.bin"
+    path.write_bytes(data)
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=pix_fmt",
+                          "-of", "csv=p=0", str(path)], capture_output=True, text=True, check=True)
+    return out.stdout.strip()
+
+
 def codecs(data: bytes, tmp_dir) -> list[str]:
     """Codec names of every stream, as ffprobe reports them."""
     import subprocess

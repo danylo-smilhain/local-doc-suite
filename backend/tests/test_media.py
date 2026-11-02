@@ -1,6 +1,6 @@
 """MP4/WebM -> MP3 and WebM -> MP4 through ffmpeg."""
 import fixtures as fx
-from conftest import codecs, is_mp3, is_mp4, is_webm, needs_ffmpeg
+from conftest import codecs, decoded_md5, is_mp3, is_mp4, is_webm, needs_ffmpeg, pix_fmt
 
 pytestmark = needs_ffmpeg
 
@@ -104,3 +104,40 @@ def test_ts_to_webm_without_vp9_falls_back_to_vp8(api, files, monkeypatch):
     _, data = api.roundtrip(fx.ts(files), "webm")
     assert is_webm(data)
     assert codecs(data, files) == ["vorbis", "vp8"]
+
+
+
+def _mp4_of(api, files, src):
+    body, data = api.roundtrip(src, "mp4")
+    out = files / "result.mp4"
+    out.write_bytes(data)
+    return body, data, out
+
+
+def test_ts_h264_aac_to_mp4_is_repacked_without_re_encoding(api, files):
+    src = fx.ts(files, "iptv.ts", vcodec="libx264", acodec="aac")
+    body, data, out = _mp4_of(api, files, src)
+    assert body["engine"] == "ffmpeg"
+    assert codecs(data, files) == ["aac", "h264"]
+    assert decoded_md5(out, "v") == decoded_md5(src, "v")
+    assert decoded_md5(out, "a") == decoded_md5(src, "a")
+
+
+def test_ts_h264_ac3_to_mp4_keeps_the_video_and_re_encodes_only_the_sound(api, files):
+    src = fx.ts(files, "dvb.ts", vcodec="libx264", acodec="ac3")
+    _, data, out = _mp4_of(api, files, src)
+    assert codecs(data, files) == ["aac", "h264"]
+    assert decoded_md5(out, "v") == decoded_md5(src, "v")
+
+
+def test_ts_10_bit_h264_to_mp4_is_re_encoded_to_8_bit(api, files):
+    src = fx.ts(files, "10bit.ts", vcodec="libx264", acodec="aac", pix_fmt="yuv420p10le")
+    _, data, _ = _mp4_of(api, files, src)
+    assert codecs(data, files) == ["aac", "h264"]
+    assert pix_fmt(data, files) == "yuv420p"
+
+
+def test_ts_hevc_to_mp4_is_re_encoded_to_h264(api, files):
+    src = fx.ts(files, "hevc.ts", vcodec="libx265", acodec="aac")
+    _, data, _ = _mp4_of(api, files, src)
+    assert codecs(data, files) == ["aac", "h264"]

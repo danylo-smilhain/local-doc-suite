@@ -310,8 +310,10 @@ def m4a(directory: Path, name: str = "song.m4a") -> Path:
     return path
 
 
-def ts(directory: Path, name: str = "recording.ts", audio: bool = True, video: bool = True) -> Path:
-    """MPEG transport stream as a TV recording makes it: MPEG-2 video, MP2 audio."""
+def ts(directory: Path, name: str = "recording.ts", audio: bool = True, video: bool = True,
+       vcodec: str = "mpeg2video", acodec: str = "mp2", pix_fmt: str = "yuv420p") -> Path:
+    """MPEG transport stream. By default as an older TV recording makes it
+    (MPEG-2 video, MP2 audio); IPTV is usually vcodec="libx264", acodec="aac"."""
     path = directory / name
     args: list[str] = []
     if video:
@@ -319,9 +321,11 @@ def ts(directory: Path, name: str = "recording.ts", audio: bool = True, video: b
     if audio:
         args += ["-f", "lavfi", "-i", "sine=frequency=440:duration=1"]
     if video:
-        args += ["-c:v", "mpeg2video"]
+        # the test pattern is RGB; without -pix_fmt x264 would make 4:4:4,
+        # while real recordings are 4:2:0
+        args += ["-c:v", vcodec, "-pix_fmt", pix_fmt]
     if audio:
-        args += ["-c:a", "mp2"]
+        args += ["-c:a", acodec]
     _ffmpeg(*args, "-shortest", "-f", "mpegts", str(path))
     return path
 
