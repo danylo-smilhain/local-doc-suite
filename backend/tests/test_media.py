@@ -12,6 +12,18 @@ def test_mp4_to_mp3(api, files):
     assert abs(body["meta"]["duration"] - 1.0) < 0.3
 
 
+def test_m4a_to_mp3(api, files):
+    body, data = api.roundtrip(fx.m4a(files), "mp3")
+    assert body["engine"] == "ffmpeg"
+    assert is_mp3(data)
+    assert abs(body["meta"]["duration"] - 1.0) < 0.3
+
+
+def test_m4a_metadata_has_duration(api, files):
+    meta = api.upload(fx.m4a(files))["meta"]
+    assert abs(meta["duration"] - 1.0) < 0.2
+
+
 def test_webm_to_mp3(api, files):
     body, data = api.roundtrip(fx.webm(files), "mp3")
     assert body["engine"] == "ffmpeg"

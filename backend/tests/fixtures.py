@@ -303,6 +303,13 @@ def mp4(directory: Path, name: str = "clip.mp4") -> Path:
     return path
 
 
+def m4a(directory: Path, name: str = "song.m4a") -> Path:
+    """One second of AAC audio in an MPEG-4 audio container."""
+    path = directory / name
+    _ffmpeg("-f", "lavfi", "-i", "sine=frequency=440:duration=1", "-c:a", "aac", str(path))
+    return path
+
+
 def webm(directory: Path, name: str = "clip.webm", audio: bool = True, video: bool = True) -> Path:
     path = directory / name
     args: list[str] = []

@@ -404,7 +404,7 @@ def doc_to_docx(job: Job) -> None:
 
 
 def video_mp3(job: Job) -> None:
-    video_to_mp3(job.in_path, job.out_path, "MP4" if job.source == "mp4" else "WebM")
+    video_to_mp3(job.in_path, job.out_path, {"mp4": "MP4", "webm": "WebM", "m4a": "M4A"}[job.source])
     job.outcome.engine = "ffmpeg"
 
 
@@ -414,7 +414,7 @@ def webm_mp4(job: Job) -> None:
 
 
 def mp3_unsupported(job: Job) -> None:
-    raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "MP3 can only be made from MP4 or WebM files.")
+    raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "MP3 can only be made from MP4, WebM or M4A files.")
 
 
 def azw3_target_unsupported(job: Job) -> None:
@@ -454,6 +454,7 @@ SINGLE: dict[tuple[str, str], Handler] = {
     **{(ext, target): image_to_text for ext in IMAGE_EXTS + RAW_EXTS for target in ("txt", "md")},
     ("mp4", "mp3"): video_mp3,
     ("webm", "mp3"): video_mp3,
+    ("m4a", "mp3"): video_mp3,
     ("webm", "mp4"): webm_mp4,
     (ANY, "azw3"): azw3_target_unsupported,
     (ANY, "mp3"): mp3_unsupported,

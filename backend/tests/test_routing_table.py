@@ -34,7 +34,8 @@ def old_single(s, t, o, tg):
     if s in ("html", "htm") and o == "md": return "html_md"
     if s in ("html", "htm") and o == "pdf" and tg: return "telegram_pdf"
     if o == "pdf" and s in LO: return "office_pdf"
-    if s in ("mp4", "webm") and o == "mp3": return "video_mp3"
+    # added after the refactor: M4A audio -> MP3 shares the MP4/WebM path
+    if s in ("mp4", "webm", "m4a") and o == "mp3": return "video_mp3"
     if s == "webm" and o == "mp4": return "webm_mp4"
     if o == "azw3": return "azw3_target_unsupported"
     if o == "mp3": return "mp3_unsupported"

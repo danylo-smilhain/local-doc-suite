@@ -107,7 +107,7 @@ def _run_ffmpeg(args, out_path: str, out_ext: str, fail_msg: str):
 
 
 def video_to_mp3(in_path, out_path, label: str = "MP4"):
-    """MP4/WebM -> MP3: первая звуковая дорожка, само видео отбрасывается."""
+    """MP4/WebM/M4A -> MP3: первая звуковая дорожка, видео (если есть) отбрасывается."""
     _require_ffmpeg(f"{label} to MP3")
     # Видео без звука проверяем заранее: иначе ffmpeg падает на -map 0:a:0
     # с невнятным "Stream map '0:a:0' matches no streams".
