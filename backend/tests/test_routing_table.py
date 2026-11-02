@@ -35,8 +35,12 @@ def old_single(s, t, o, tg):
     if s in ("html", "htm") and o == "pdf" and tg: return "telegram_pdf"
     if o == "pdf" and s in LO: return "office_pdf"
     # added after the refactor: M4A audio -> MP3 shares the MP4/WebM path
-    if s in ("mp4", "webm", "m4a") and o == "mp3": return "video_mp3"
-    if s == "webm" and o == "mp4": return "webm_mp4"
+    # added after the refactor: TS (MPEG transport stream) -> MP3 / MP4 / WebM;
+    # only TS makes a WebM, every other source -> WebM is refused
+    if s in ("mp4", "webm", "m4a", "ts") and o == "mp3": return "video_mp3"
+    if s in ("webm", "ts") and o == "mp4": return "video_mp4"
+    if s == "ts" and o == "webm": return "video_webm"
+    if o == "webm": return "webm_target_unsupported"
     if o == "azw3": return "azw3_target_unsupported"
     if o == "mp3": return "mp3_unsupported"
     if o == "mp4": return "mp4_unsupported"
@@ -67,13 +71,14 @@ def NEW(c):
            c.txt_to_md: "txt_md", c.txt_via_md: "txt_via_md", c.azw3_to_epub: "azw3_epub",
            c.azw3_to_pdf: "azw3_pdf", c.azw3_to_md: "azw3_md", c.azw3_unsupported: "azw3_unsupported",
            c.epub_pdf: "epub_pdf", c.fb2_to_pdf: "fb2_pdf", c.book_to_md: "book_md", c.html_to_md: "html_md",
-           c.office_to_pdf: "office_pdf", c.video_mp3: "video_mp3", c.webm_mp4: "webm_mp4",
+           c.office_to_pdf: "office_pdf", c.video_mp3: "video_mp3", c.video_mp4: "video_mp4",
            c.mp3_unsupported: "mp3_unsupported", c.mp4_unsupported: "mp4_unsupported",
            c.merge_pdfs: "pdf_merger", c.merge_into_pdf: "merge_to_pdf", c.merge_into_docx: "merge_docx",
            c.merge_txt_to_md: "txt_md_merge", c.merge_books: "books", c.merge_as_text: "text",
            c.merge_concat_then_pandoc: "concat",
             c.image_to_text: "image_text", c.doc_to_docx: "doc_docx",
-            c.kindle_to_azw3: "kindle_azw3", c.azw3_target_unsupported: "azw3_target_unsupported"}
+            c.kindle_to_azw3: "kindle_azw3", c.azw3_target_unsupported: "azw3_target_unsupported",
+            c.video_webm: "video_webm", c.webm_target_unsupported: "webm_target_unsupported"}
 
 
 PAIRS = [(s.value, t) for s in SourceExt for t in TargetFormat]

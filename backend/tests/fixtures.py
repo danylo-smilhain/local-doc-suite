@@ -310,6 +310,22 @@ def m4a(directory: Path, name: str = "song.m4a") -> Path:
     return path
 
 
+def ts(directory: Path, name: str = "recording.ts", audio: bool = True, video: bool = True) -> Path:
+    """MPEG transport stream as a TV recording makes it: MPEG-2 video, MP2 audio."""
+    path = directory / name
+    args: list[str] = []
+    if video:
+        args += ["-f", "lavfi", "-i", "testsrc=size=64x48:rate=25:duration=1"]
+    if audio:
+        args += ["-f", "lavfi", "-i", "sine=frequency=440:duration=1"]
+    if video:
+        args += ["-c:v", "mpeg2video"]
+    if audio:
+        args += ["-c:a", "mp2"]
+    _ffmpeg(*args, "-shortest", "-f", "mpegts", str(path))
+    return path
+
+
 def webm(directory: Path, name: str = "clip.webm", audio: bool = True, video: bool = True) -> Path:
     path = directory / name
     args: list[str] = []

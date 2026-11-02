@@ -121,7 +121,7 @@ _READERS = {
     'epub': _epub_meta,
     'azw3': _azw3_meta, 'mobi': _azw3_meta,
     'fb2': _fb2_meta,
-    'mp4': _media_meta, 'mp3': _media_meta, 'webm': _media_meta, 'm4a': _media_meta,
+    'mp4': _media_meta, 'mp3': _media_meta, 'webm': _media_meta, 'm4a': _media_meta, 'ts': _media_meta,
 }
 
 

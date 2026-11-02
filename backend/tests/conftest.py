@@ -160,6 +160,20 @@ def is_mp4(data: bytes) -> bool:
     return data[4:8] == b"ftyp"
 
 
+def is_webm(data: bytes) -> bool:
+    return data[:4] == b"\x1a\x45\xdf\xa3" and b"webm" in data[:64]
+
+
+def codecs(data: bytes, tmp_dir) -> list[str]:
+    """Codec names of every stream, as ffprobe reports them."""
+    import subprocess
+    path = tmp_dir / "probe.bin"
+    path.write_bytes(data)
+    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=codec_name",
+                          "-of", "csv=p=0", str(path)], capture_output=True, text=True, check=True)
+    return sorted(out.stdout.split())
+
+
 def docx_text(data: bytes) -> str:
     from fixtures import zip_read
     return zip_read(data, "word/document.xml")

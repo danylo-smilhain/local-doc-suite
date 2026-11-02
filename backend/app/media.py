@@ -1,4 +1,4 @@
-"""MP4/WebM -> MP3 and WebM -> MP4 through the system ffmpeg/ffprobe."""
+"""Audio/video conversions (MP3, MP4, WebM) through the system ffmpeg/ffprobe."""
 import logging
 import os
 import shutil
@@ -72,7 +72,10 @@ def _probe_streams(in_path: str, kind: str, label: str) -> bool:
         capture_output=True, text=True, errors="replace", timeout=FFPROBE_TIMEOUT
     )
     if probe.returncode != 0:
-        raise RuntimeError(f"ffprobe could not read the {label} file: {_stderr_tail(probe.stderr)}")
+        # Not a media file at all (a TypeScript .ts, a renamed document):
+        # the upload is at fault, not the server, so 422 rather than 500.
+        raise EbookInputError(ErrorCode.UNSUPPORTED_FORMAT,
+                              f"The file is not a readable {label} file: {_stderr_tail(probe.stderr)}")
     return bool(probe.stdout.strip())
 
 
@@ -136,16 +139,21 @@ def _ffmpeg_has_encoder(name: str) -> bool:
     return any(line.split()[1:2] == [name] for line in proc.stdout.splitlines())
 
 
-def webm_to_mp4(in_path, out_path):
-    """WebM -> MP4 (H.264 + AAC).
-
-    Скопировать потоки как есть нельзя: VP8/VP9 и Vorbis в MP4 большинство
-    плееров не открывает, поэтому видео и звук перекодируются.
-    """
-    _require_ffmpeg("WebM to MP4")
-    if not _probe_streams(in_path, "v", "WebM"):
+def _require_video(in_path, label: str, target: str):
+    _require_ffmpeg(f"{label} to {target}")
+    if not _probe_streams(in_path, "v", label):
         raise EbookInputError(ErrorCode.MEDIA_NO_VIDEO,
-                              "The WebM file has no video stream (audio only); use WebM to MP3.")
+                              f"The {label} file has no video stream (audio only); use {label} to MP3.")
+
+
+def video_to_mp4(in_path, out_path, label: str = "WebM"):
+    """WebM/TS -> MP4 (H.264 + AAC).
+
+    Скопировать потоки как есть нельзя: VP8/VP9 и Vorbis (WebM), MPEG-2 и
+    MP2/AC-3 (запись с ТВ в TS) в MP4 большинство плееров не открывает,
+    поэтому видео и звук перекодируются.
+    """
+    _require_video(in_path, label, "MP4")
 
     if _ffmpeg_has_encoder("libx264"):
         # CRF 23 — стандартное качество x264; veryfast заметно быстрее
@@ -168,5 +176,29 @@ def webm_to_mp4(in_path, out_path):
          "-map_metadata", "0",
          # moov в начале файла: видео начинает играть до полной загрузки.
          "-movflags", "+faststart"],
-        out_path, "mp4", "ffmpeg could not re-encode WebM to MP4",
+        out_path, "mp4", f"ffmpeg could not re-encode {label} to MP4",
+    )
+
+
+def video_to_webm(in_path, out_path, label: str = "TS"):
+    """Video -> WebM: VP9 + Opus, or VP8 + Vorbis on an ffmpeg without them.
+
+    WebM plays in every current browser and in HTML5 <video> without
+    plugins; VP9/Opus is today's pairing, VP8/Vorbis the original one.
+    """
+    _require_video(in_path, label, "WebM")
+    if _ffmpeg_has_encoder("libvpx-vp9") and _ffmpeg_has_encoder("libopus"):
+        # CRF 32 with -b:v 0 is constant-quality VP9; -deadline good with
+        # -cpu-used 4 and row threading keeps a long recording fast enough.
+        codecs = ["-c:v", "libvpx-vp9", "-crf", "32", "-b:v", "0", "-deadline", "good",
+                  "-cpu-used", "4", "-row-mt", "1", "-c:a", "libopus", "-b:a", "128k"]
+    else:
+        codecs = ["-c:v", "libvpx", "-crf", "10", "-b:v", "2M", "-c:a", "libvorbis", "-q:a", "5"]
+    _run_ffmpeg(
+        ["-i", in_path,
+         "-map", "0:v:0", "-map", "0:a:0?",          # звук — если он есть
+         *codecs,
+         "-vf", "format=yuv420p",
+         "-map_metadata", "0"],
+        out_path, "webm", f"ffmpeg could not re-encode {label} to WebM",
     )

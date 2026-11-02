@@ -33,7 +33,7 @@ from app.ebooks.epub import epub_to_pdf
 from app.encoding import read_text_file
 from app.engines import LIBREOFFICE_PDF_SOURCES, engine_libreoffice, engine_pandoc
 from app.errors import DependencyMissing, EbookInputError, ErrorCode
-from app.media import video_to_mp3, webm_to_mp4
+from app.media import video_to_mp3, video_to_mp4, video_to_webm
 from app.merge import convert_to_text_format, merge_docx, merge_to_pdf
 from app.ocr import _ocr_png, available_ocr_lang, extract_pdf_text_cached, pdf_text_layer_is_broken
 from app.pdf_flow import (
@@ -403,18 +403,31 @@ def doc_to_docx(job: Job) -> None:
         shutil.rmtree(workdir, ignore_errors=True)
 
 
+# How each audio/video source is named in messages ("TS to MP4", ...).
+MEDIA_LABELS = {"mp4": "MP4", "webm": "WebM", "m4a": "M4A", "ts": "TS"}
+
+
 def video_mp3(job: Job) -> None:
-    video_to_mp3(job.in_path, job.out_path, {"mp4": "MP4", "webm": "WebM", "m4a": "M4A"}[job.source])
+    video_to_mp3(job.in_path, job.out_path, MEDIA_LABELS[job.source])
     job.outcome.engine = "ffmpeg"
 
 
-def webm_mp4(job: Job) -> None:
-    webm_to_mp4(job.in_path, job.out_path)
+def video_mp4(job: Job) -> None:
+    video_to_mp4(job.in_path, job.out_path, MEDIA_LABELS[job.source])
+    job.outcome.engine = "ffmpeg"
+
+
+def video_webm(job: Job) -> None:
+    video_to_webm(job.in_path, job.out_path, MEDIA_LABELS[job.source])
     job.outcome.engine = "ffmpeg"
 
 
 def mp3_unsupported(job: Job) -> None:
-    raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "MP3 can only be made from MP4, WebM or M4A files.")
+    raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "MP3 can only be made from MP4, WebM, M4A or TS files.")
+
+
+def webm_target_unsupported(job: Job) -> None:
+    raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "WebM can only be made from TS files.")
 
 
 def azw3_target_unsupported(job: Job) -> None:
@@ -422,7 +435,7 @@ def azw3_target_unsupported(job: Job) -> None:
 
 
 def mp4_unsupported(job: Job) -> None:
-    raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "MP4 can only be made from WebM files.")
+    raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "MP4 can only be made from WebM or TS files.")
 
 
 SINGLE: dict[tuple[str, str], Handler] = {
@@ -455,8 +468,12 @@ SINGLE: dict[tuple[str, str], Handler] = {
     ("mp4", "mp3"): video_mp3,
     ("webm", "mp3"): video_mp3,
     ("m4a", "mp3"): video_mp3,
-    ("webm", "mp4"): webm_mp4,
+    ("ts", "mp3"): video_mp3,
+    ("webm", "mp4"): video_mp4,
+    ("ts", "mp4"): video_mp4,
+    ("ts", "webm"): video_webm,
     (ANY, "azw3"): azw3_target_unsupported,
+    (ANY, "webm"): webm_target_unsupported,
     (ANY, "mp3"): mp3_unsupported,
     (ANY, "mp4"): mp4_unsupported,
 }

@@ -43,6 +43,7 @@ class SourceExt(str, Enum):
     WEBM = "webm"
     MP3 = "mp3"
     M4A = "m4a"
+    TS = "ts"
     PNG = "png"
     JPG = "jpg"
     JPEG = "jpeg"
@@ -68,6 +69,7 @@ class TargetFormat(str, Enum):
     HTML = "html"
     MP3 = "mp3"
     MP4 = "mp4"
+    WEBM = "webm"
 
     @property
     def out_ext(self) -> str:
