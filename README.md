@@ -28,7 +28,7 @@ Taken from the backend routing table (`backend/app/convert.py`) and the
 accepted upload types (`backend/app/models.py`).
 
 **Upload types:** PDF, DOCX, DOC, ODT, RTF, PPTX, PPT, ODP, XLSX, XLS, ODS,
-HTML/HTM, MD/Markdown, TXT, EPUB, FB2, AZW3, MP4, WebM, MP3, PNG, JPG/JPEG,
+HTML/HTM, MD/Markdown, TXT, EPUB, FB2, AZW3, MOBI, MP4, WebM, M4A, MP3, PNG, JPG/JPEG,
 TIF/TIFF, BMP, GIF, WebP, camera RAW/DNG.
 
 **Single-file conversions**
@@ -42,9 +42,10 @@ TIF/TIFF, BMP, GIF, WebP, camera RAW/DNG.
 | HTML/HTM | PDF, MD | |
 | TXT | MD (with encoding detection), and other text targets via Markdown | |
 | EPUB, FB2 | PDF, MD | |
-| AZW3 | EPUB, PDF, MD | |
+| AZW3 | EPUB, PDF, MD | Calibre |
+| MOBI | EPUB, AZW3, PDF, MD | Calibre |
 | PNG, JPG/JPEG, TIF/TIFF, BMP, GIF, WebP, RAW/DNG | TXT, MD | Tesseract OCR |
-| MP4, WebM | MP3 | ffmpeg |
+| MP4, WebM, M4A | MP3 | ffmpeg |
 | WebM | MP4 | ffmpeg |
 
 Any other pair is handed to pandoc, which converts what it can read into
