@@ -51,6 +51,7 @@ def test_mobi_metadata_counts_words(api, files):
 def test_mobi_to_unsupported_target_is_422(api, files):
     res = api.convert(api.upload(fx.mobi(files)), "txt")
     assert res.status_code == 422
+    assert "MOBI cannot be converted to TXT" in res.json()["detail"]
 
 
 @pytest.mark.parametrize("target", ["epub", "azw3"])

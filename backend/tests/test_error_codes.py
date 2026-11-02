@@ -82,3 +82,12 @@ def test_missing_form_field_is_invalid_request(client):
 def test_user_facing_detail_is_english(api, files, make, target):
     detail = api.convert(api.upload(make(files)), target).json()["detail"]
     assert detail.isascii(), detail
+
+
+def test_missing_calibre_for_azw3_is_dependency_missing(api, files, monkeypatch):
+    up = api.upload(fx.azw3_renamed_epub(files, "book.mobi"))
+    import app.ebooks.azw3
+    monkeypatch.setattr(app.ebooks.azw3.shutil, "which", lambda name: None)
+    res = api.convert(up, "azw3")
+    assert (res.status_code, code_of(res)) == (500, "DEPENDENCY_MISSING")
+    assert "Calibre" in res.json()["detail"]
