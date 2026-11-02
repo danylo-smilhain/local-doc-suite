@@ -3,7 +3,7 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr tesseract-ocr-eng tesseract-ocr-ukr tesseract-ocr-rus \
     ocrmypdf ghostscript unpaper pngquant \
     pandoc libreoffice poppler-utils libgl1 \
-    ffmpeg \
+    ffmpeg calibre \
     fonts-liberation fonts-dejavu \
     hyphen-ru hyphen-uk hyphen-en-us \
     && rm -rf /var/lib/apt/lists/*
