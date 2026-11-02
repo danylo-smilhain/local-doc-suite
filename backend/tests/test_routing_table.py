@@ -24,7 +24,10 @@ def old_single(s, t, o, tg):
         if t in ("txt", "md"): return "pdf_text"
         return "pandoc"
     if s == "txt": return "txt_md" if o == "md" else "txt_via_md"
-    if s == "azw3": return {"epub": "azw3_epub", "pdf": "azw3_pdf", "md": "azw3_md"}.get(o, "azw3_unsupported")
+    # added after the refactor: MOBI reads like AZW3; only MOBI -> AZW3 (Calibre)
+    # makes an AZW3, every other source -> AZW3 is refused instead of hitting pandoc
+    if s == "mobi" and o == "azw3": return "kindle_azw3"
+    if s in ("azw3", "mobi"): return {"epub": "azw3_epub", "pdf": "azw3_pdf", "md": "azw3_md"}.get(o, "azw3_unsupported")
     if s == "epub" and o == "pdf": return "epub_pdf"
     if s == "fb2" and o == "pdf": return "fb2_pdf"
     if s in ("epub", "fb2") and o == "md": return "book_md"
@@ -33,6 +36,7 @@ def old_single(s, t, o, tg):
     if o == "pdf" and s in LO: return "office_pdf"
     if s in ("mp4", "webm") and o == "mp3": return "video_mp3"
     if s == "webm" and o == "mp4": return "webm_mp4"
+    if o == "azw3": return "azw3_target_unsupported"
     if o == "mp3": return "mp3_unsupported"
     if o == "mp4": return "mp4_unsupported"
     return "pandoc"
@@ -67,7 +71,8 @@ def NEW(c):
            c.merge_pdfs: "pdf_merger", c.merge_into_pdf: "merge_to_pdf", c.merge_into_docx: "merge_docx",
            c.merge_txt_to_md: "txt_md_merge", c.merge_books: "books", c.merge_as_text: "text",
            c.merge_concat_then_pandoc: "concat",
-            c.image_to_text: "image_text", c.doc_to_docx: "doc_docx"}
+            c.image_to_text: "image_text", c.doc_to_docx: "doc_docx",
+            c.kindle_to_azw3: "kindle_azw3", c.azw3_target_unsupported: "azw3_target_unsupported"}
 
 
 PAIRS = [(s.value, t) for s in SourceExt for t in TargetFormat]

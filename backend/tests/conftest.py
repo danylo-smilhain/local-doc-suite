@@ -38,6 +38,7 @@ needs_pandoc = requires("pandoc")
 needs_libreoffice = requires("libreoffice")
 needs_tesseract = requires("tesseract")
 needs_ffmpeg = requires("ffmpeg", "ffprobe")
+needs_calibre = requires("ebook-convert")
 
 
 @pytest.fixture(scope="session")

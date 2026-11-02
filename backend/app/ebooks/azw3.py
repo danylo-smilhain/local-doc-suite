@@ -144,6 +144,21 @@ def azw3_to_epub(in_path: str, out_path: str) -> str:
             os.remove(tmp)
 
 
+def epub_to_azw3(epub_path: str, out_path: str) -> None:
+    """EPUB -> AZW3 (Kindle KF8). Only Calibre can write AZW3."""
+    exe = shutil.which('ebook-convert')
+    if not exe:
+        raise DependencyMissing("Writing AZW3 needs Calibre (ebook-convert) on the server.")
+    tmp = f"{out_path}.{uuid.uuid4().hex}.tmp.azw3"
+    try:
+        subprocess.run([exe, epub_path, tmp], check=True, capture_output=True,
+                       text=True, timeout=AZW3_TIMEOUT)
+        os.replace(tmp, out_path)
+    finally:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
 def azw3_epub_cached(in_path: str) -> str:
     """EPUB рядом с загруженным AZW3: распаковка делается один раз (при
     загрузке, для метаданных) и переиспользуется всеми конвертациями."""

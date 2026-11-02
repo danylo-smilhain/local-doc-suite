@@ -27,7 +27,7 @@ from pdf2docx import Converter
 from pypdf import PdfWriter
 
 from app.config import OUTPUT_DIR
-from app.ebooks.azw3 import azw3_epub_cached
+from app.ebooks.azw3 import azw3_epub_cached, epub_to_azw3
 from app.ebooks.book_format import format_book_docx
 from app.ebooks.epub import epub_to_pdf
 from app.encoding import read_text_file
@@ -307,10 +307,15 @@ def azw3_to_md(job: Job) -> None:
     engine_pandoc(azw3_epub_cached(job.in_path), job.out_path, "md", "epub")
 
 
+def kindle_to_azw3(job: Job) -> None:
+    epub_to_azw3(azw3_epub_cached(job.in_path), job.out_path)
+    job.outcome.engine = "calibre"
+
+
 def azw3_unsupported(job: Job) -> None:
     azw3_epub_cached(job.in_path)  # still reports DRM/KFX/damaged files first
     raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION,
-                          f"AZW3 cannot be converted to {job.out_ext.upper()}")
+                          f"{job.source.upper()} cannot be converted to {job.out_ext.upper()}")
 
 
 def epub_pdf(job: Job) -> None:
@@ -412,6 +417,10 @@ def mp3_unsupported(job: Job) -> None:
     raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "MP3 can only be made from MP4 or WebM files.")
 
 
+def azw3_target_unsupported(job: Job) -> None:
+    raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "AZW3 can only be made from MOBI files.")
+
+
 def mp4_unsupported(job: Job) -> None:
     raise EbookInputError(ErrorCode.UNSUPPORTED_CONVERSION, "MP4 can only be made from WebM files.")
 
@@ -427,6 +436,11 @@ SINGLE: dict[tuple[str, str], Handler] = {
     ("azw3", "pdf"): azw3_to_pdf,
     ("azw3", "md"): azw3_to_md,
     ("azw3", ANY): azw3_unsupported,
+    ("mobi", "epub"): azw3_to_epub,
+    ("mobi", "azw3"): kindle_to_azw3,
+    ("mobi", "pdf"): azw3_to_pdf,
+    ("mobi", "md"): azw3_to_md,
+    ("mobi", ANY): azw3_unsupported,
     ("epub", "pdf"): epub_pdf,
     ("fb2", "pdf"): fb2_to_pdf,
     ("epub", "md"): book_to_md,
@@ -441,6 +455,7 @@ SINGLE: dict[tuple[str, str], Handler] = {
     ("mp4", "mp3"): video_mp3,
     ("webm", "mp3"): video_mp3,
     ("webm", "mp4"): webm_mp4,
+    (ANY, "azw3"): azw3_target_unsupported,
     (ANY, "mp3"): mp3_unsupported,
     (ANY, "mp4"): mp4_unsupported,
 }

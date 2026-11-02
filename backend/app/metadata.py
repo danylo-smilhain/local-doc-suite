@@ -119,7 +119,7 @@ _READERS = {
     'docx': _docx_meta,
     'pptx': _pptx_meta,
     'epub': _epub_meta,
-    'azw3': _azw3_meta,
+    'azw3': _azw3_meta, 'mobi': _azw3_meta,
     'fb2': _fb2_meta,
     'mp4': _media_meta, 'mp3': _media_meta, 'webm': _media_meta,
 }

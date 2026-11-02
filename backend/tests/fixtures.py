@@ -281,6 +281,15 @@ def azw3_drm(directory: Path, name: str = "drm.azw3") -> Path:
     return path
 
 
+def mobi(directory: Path, name: str = "book.mobi") -> Path:
+    """A real MOBI book, built from the EPUB fixture by Calibre."""
+    src = epub(directory, name + ".epub")
+    path = directory / name
+    subprocess.run(["ebook-convert", str(src), str(path)], check=True, capture_output=True, timeout=300)
+    src.unlink()
+    return path
+
+
 def _ffmpeg(*args: str) -> None:
     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", *args],
                    check=True, capture_output=True, timeout=120)
