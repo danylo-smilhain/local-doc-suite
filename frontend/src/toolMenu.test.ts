@@ -77,11 +77,12 @@ describe('WebM tool texts are translated, not the English fallback', () => {
   });
 });
 
-describe('MOBI and M4A tool texts are translated, not the English fallback', () => {
+describe('MOBI, M4A and TS tool texts are translated, not the English fallback', () => {
   type ToolTexts = Record<string, { t: string; d: string }>;
   const expected: Record<string, string[]> = {
     'mobi-to-epub': ['MOBI', 'EPUB'], 'mobi-to-azw3': ['MOBI', 'AZW3'], 'mobi-to-pdf': ['MOBI', 'PDF'],
     'mobi-to-md': ['MOBI', 'Markdown'], 'm4a-to-mp3': ['M4A', 'MP3'],
+    'ts-to-webm': ['TS', 'WebM'], 'ts-to-mp4': ['TS', 'MP4'], 'ts-to-mp3': ['TS', 'MP3'],
   };
   it.each(LANGUAGES.filter((l) => l.code !== 'en').map((l) => l.code))('%s', async (code) => {
     const tools = (await loadMessages(code)).tools as ToolTexts;

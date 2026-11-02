@@ -3,7 +3,7 @@
 // Документ в цвете формата результата с подписью формата, внизу слева —
 // значок в цвете исходного формата: стрелка (конвертация), «+» (слияние)
 // или «T» (распознавание текста). Цвета — привычные цвета форматов.
-export type Fmt = 'pdf' | 'doc' | 'docx' | 'pptx' | 'txt' | 'md' | 'epub' | 'fb2' | 'azw3' | 'mobi' | 'html' | 'mp3' | 'mp4' | 'webm' | 'm4a' | 'img';
+export type Fmt = 'pdf' | 'doc' | 'docx' | 'pptx' | 'txt' | 'md' | 'epub' | 'fb2' | 'azw3' | 'mobi' | 'html' | 'mp3' | 'mp4' | 'webm' | 'm4a' | 'ts' | 'img';
 
 const FORMATS: Record<Fmt, { color: string; label: string }> = {
   pdf:  { color: '#e5322d', label: 'PDF' },
@@ -21,6 +21,7 @@ const FORMATS: Record<Fmt, { color: string; label: string }> = {
   mp4:  { color: '#6d28d9', label: 'MP4' },
   webm: { color: '#15803d', label: 'WEBM' },
   m4a:  { color: '#0f766e', label: 'M4A' },
+  ts:   { color: '#475569', label: 'TS' },
   img:  { color: '#c58a06', label: 'IMG' },
 };
 

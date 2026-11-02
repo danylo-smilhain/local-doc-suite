@@ -46,6 +46,9 @@ export const toolsConfig: Tool[] = [
   { id: 'webm-to-mp3', icon: icon({ from: 'webm', to: 'mp3' }), out: 'mp3', category: 'convert' },
   { id: 'webm-to-mp4', icon: icon({ from: 'webm', to: 'mp4' }), out: 'mp4', category: 'convert' },
   { id: 'm4a-to-mp3', icon: icon({ from: 'm4a', to: 'mp3' }), out: 'mp3', category: 'convert' },
+  { id: 'ts-to-webm', icon: icon({ from: 'ts', to: 'webm' }), out: 'webm', category: 'convert' },
+  { id: 'ts-to-mp4', icon: icon({ from: 'ts', to: 'mp4' }), out: 'mp4', category: 'convert' },
+  { id: 'ts-to-mp3', icon: icon({ from: 'ts', to: 'mp3' }), out: 'mp3', category: 'convert' },
   { id: 'merge-docx', icon: icon({ from: 'docx', to: 'docx', kind: 'merge' }), out: 'docx', category: 'merge' },
   { id: 'merge-pdf', icon: icon({ from: 'pdf', to: 'pdf', kind: 'merge' }), out: 'pdf', category: 'merge' },
   { id: 'merge-txt', icon: icon({ from: 'txt', to: 'txt', kind: 'merge' }), out: 'txt', category: 'merge' },
@@ -74,6 +77,6 @@ export const TOOL_MENU = {
     'pptx-to-docx', 'pptx-to-md'],
   ebooks: ['word-to-epub', 'word-to-fb2', 'epub-to-md', 'fb2-to-md', 'azw3-to-epub', 'azw3-to-md',
     'mobi-to-epub', 'mobi-to-azw3', 'mobi-to-md'],
-  media: ['mp4-to-mp3', 'webm-to-mp3', 'webm-to-mp4', 'm4a-to-mp3'],
+  media: ['mp4-to-mp3', 'webm-to-mp3', 'webm-to-mp4', 'm4a-to-mp3', 'ts-to-webm', 'ts-to-mp4', 'ts-to-mp3'],
   ocr: ['ocr-to-txt', 'ocr-to-md'],
 } as const;
