@@ -37,6 +37,7 @@ TIF/TIFF, BMP, GIF, WebP, camera RAW/DNG.
 | --- | --- | --- |
 | PDF | DOCX (layout or flow), DOCX with OCR | PyMuPDF / pdf2docx, Tesseract |
 | PDF | TXT, MD | PyMuPDF text layer, OCR when the layer is broken |
+| PDF | PPTX (one slide per page as a picture, page text in the speaker notes) | PyMuPDF, Tesseract for scans |
 | DOCX, DOC, ODT, RTF, PPTX, PPT, ODP, XLSX, XLS, ODS | PDF | LibreOffice |
 | DOC | DOCX | LibreOffice |
 | HTML/HTM | PDF, MD | |
