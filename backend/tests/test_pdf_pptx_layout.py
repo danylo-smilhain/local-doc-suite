@@ -63,3 +63,37 @@ def test_garbled_runs_are_dropped_and_the_line_is_cut_there(pp):
     out = pp.without_garbled(segs)
     assert [[r["text"] for r in s["runs"]] for s in out] == [["Good start"], ["good end"]]
     assert out[1]["runs"][0]["x0"] == 120              # keeps its own place
+
+
+def run(text, x0=0):
+    return {"text": text, "x0": x0, "x1": x0 + 50, "size": 10, "origin_y": 20}
+
+
+@pytest.mark.parametrize("text", ["PR B0 ><C=V:0FVW", "PR-70EV4 O:", "\x11@5=4"])
+def test_on_a_damaged_page_doubtful_runs_stay_in_the_picture(pp, text):
+    assert pp.without_garbled([{"runs": [run(text)]}]) == []
+
+
+@pytest.mark.parametrize("text", ["Clean heading here", "Digital PR", "презентації нових проєктів",
+                                  "2024 рік", "Що таке PR-захід?"])
+def test_on_a_damaged_page_plain_runs_become_text(pp, text):
+    assert pp.without_garbled([{"runs": [run(text)]}]) != []
+
+
+@pytest.mark.parametrize("w,h,dpi", [(595, 842, 300), (1920, 1080, 132), (1440, 810, 175)])
+def test_ocr_resolution_follows_the_page_size(pp, w, h, dpi):
+    assert pp.ocr_dpi(w, h) == dpi                   # like an A4 page at 300 dpi, never above it
+
+
+def test_a_title_slide_has_enough_words_for_ocr(pp):
+    seg = lambda text: {"runs": [run(text)]}
+    assert pp.ocr_found_text([seg("Спікер Марія Пальчук")])
+    assert not pp.ocr_found_text([seg("Марія Пальчук")])
+    assert not pp.ocr_found_text([seg("ii I1 . ~~ a")])  # photo noise
+
+
+def test_only_text_under_recognised_words_leaves_the_background(pp):
+    import fitz
+    title, body = fitz.Rect(100, 50, 600, 120), fitz.Rect(100, 300, 400, 330)
+    words = [(110, 305, 200, 328)]                       # OCR found only the body line
+    assert pp.rects_under_words([title, body], words) == [body]

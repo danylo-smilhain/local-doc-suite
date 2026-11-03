@@ -51,6 +51,7 @@ def test_pptx_without_ocr_keeps_good_text_and_leaves_garbage_in_the_picture(api,
     body, data = api.roundtrip(fx.garbled_text_pdf(files), "pptx")
     text = slide_text(slides_of(data).slides[0])
     assert fx.CLEAN_LINE in text
+    assert body.get("ocr_mode") is None              # nothing was recognised
     assert "<5=546" not in text and "\x11" not in text
     assert "with OCR" in body["warning"]
 

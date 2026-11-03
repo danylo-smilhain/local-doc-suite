@@ -17,6 +17,8 @@ A text layer whose ToUnicode table is broken is repaired first
 """
 import io
 import logging
+import re
+from typing import NamedTuple
 
 import fitz
 from lxml import etree
@@ -29,7 +31,7 @@ from pptx.util import Emu, Pt
 from app.ocr import (OCR_DPI, OCR_LANG_SAMPLE_PAGES, _choose_ocr_lang_order, _ocr_png, _render_page_png,
                      available_ocr_lang, page_text_is_broken, span_is_garbled)
 from app.pdf_layout import (LAYOUT_BG_DPI, _collect_page_text, _image_bytes, _inpaint_boxes,
-                            _layout_page_is_scan, _ocr_is_meaningful, _ocr_segments, _render_without_text,
+                            _layout_page_is_scan, _ocr_segments, _render_without_text,
                             _rotated_text_rects)
 from app.pdf_text import repair_pdf_tounicode
 
@@ -46,6 +48,17 @@ BASELINE_EM = 0.9
 LINE_HEIGHT_EM = 1.25
 WIDTH_SLACK_EM = 0.3
 _A = "http://schemas.openxmlformats.org/drawingml/2006/main"
+# OCR works best on letters a few dozen pixels tall: as on an A4 page at
+# 300 dpi. A Canva slide is 1440-1920 pt wide; at 300 dpi its titles grow to
+# hundreds of pixels and Tesseract misreads them ("РЮ-зах!д" for "PR-захід").
+OCR_LONG_SIDE_PX = 3508
+# Words of 3+ letters that make OCR output text and not photo noise. Word's
+# layout asks for 12 (a document page); a title slide has 3 to 7.
+SLIDE_OCR_MIN_WORDS = 3
+# On a damaged page a run that mixes letters and digits ("B0", "70EV4") or
+# has odd symbols in a word may be garbled although no control character
+# gives it away; it stays in the picture, where the PDF draws it correctly.
+_DOUBTFUL_WORD = re.compile(r"(?=\S*[^\W\d_])(?=\S*\d)\S+|\S*[;<=>@]\S*|\S*[:?]\S")
 
 
 def slide_size(width_pt: float, height_pt: float) -> tuple[int, int]:
@@ -105,40 +118,72 @@ def _ocr_lang_order(doc, pages: list[int], lang: str) -> str:
     return _choose_ocr_lang_order(samples, lang)
 
 
-def _ocr_page(src, pno: int, broken: bool, lang: str):
-    """(background, OCR segments) for a scan or a damaged text layer, as
-    pdf_layout_to_docx does; segments are [] when nothing readable was found."""
+class PageContent(NamedTuple):
+    background: Image.Image
+    segments: list[dict]
+    unread: bool        # its text needed OCR, which this tool does not run
+    recognised: bool    # its text comes from OCR
+
+
+def _ocr_page(src, pno: int, broken: bool, lang: str) -> PageContent:
+    """A scan or a damaged text layer through OCR, as pdf_layout_to_docx
+    does, at a resolution that suits the page size. Only text OCR
+    recognised leaves the background; with nothing recognised the page
+    stays a picture."""
     page = src[pno]
-    if broken:
-        _, rects = _collect_page_text(page)
-        rects = rects or [fitz.Rect(b[:4]) for b in page.get_text("blocks")]
-        bg = _render_without_text(src, pno, rects, OCR_DPI, keep=_rotated_text_rects(page))
-    else:
-        bg = _render_without_text(src, pno, [], OCR_DPI)
-    full = page.get_pixmap(dpi=OCR_DPI, alpha=False)
+    dpi = ocr_dpi(page.rect.width, page.rect.height)
+    full = page.get_pixmap(dpi=dpi, alpha=False)
     full_img = Image.frombytes("RGB", (full.width, full.height), full.samples)
     try:
-        segments, boxes = _ocr_segments(full_img, 72.0 / OCR_DPI, lang)
+        segments, boxes = _ocr_segments(full_img, 72.0 / dpi, lang)
     except Exception as e:
         logger.warning(f"OCR of page {pno + 1} failed: {e}")
         segments, boxes = [], []
-    if not (segments and _ocr_is_meaningful(segments)):
-        return full_img, []
-    if not broken:
-        bg = _inpaint_boxes(bg, boxes)
-    return bg, segments
+    if not ocr_found_text(segments):
+        return PageContent(full_img, [], False, False)
+    if broken:
+        _, rects = _collect_page_text(page)
+        k = 72.0 / dpi
+        words = [(b[0] * k, b[1] * k, b[2] * k, b[3] * k) for b in boxes]
+        bg = _render_without_text(src, pno, rects_under_words(rects, words), dpi,
+                                  keep=_rotated_text_rects(page))
+    else:
+        bg = _inpaint_boxes(full_img, boxes)
+    return PageContent(bg, segments, False, True)
+
+
+def ocr_dpi(width_pt: float, height_pt: float) -> int:
+    """Resolution for OCR of a page this size (see OCR_LONG_SIDE_PX)."""
+    return min(OCR_DPI, round(OCR_LONG_SIDE_PX * 72 / max(width_pt, height_pt)))
+
+
+def ocr_found_text(segments: list[dict]) -> bool:
+    words = [w for s in segments for r in s["runs"] for w in r["text"].split()]
+    return sum(1 for w in words if sum(c.isalpha() for c in w) >= 3) >= SLIDE_OCR_MIN_WORDS
+
+
+def rects_under_words(rects: list, word_boxes: list) -> list:
+    """Text-layer rects that OCR recognised (a word box overlaps them): only
+    these leave the background; text OCR missed stays visible in it."""
+    boxes = [fitz.Rect(b) for b in word_boxes]
+    return [r for r in rects if any(r.intersects(b) for b in boxes)]
+
+
+def _doubtful(text: str) -> bool:
+    return span_is_garbled(text, True) or bool(_DOUBTFUL_WORD.fullmatch(text.strip())) or any(
+        _DOUBTFUL_WORD.fullmatch(w) for w in text.split())
 
 
 def without_garbled(segments: list[dict]) -> list[dict]:
-    """Segments with garbled runs (a font without a Unicode mapping) taken
-    out; a line is cut where one was, so the text after it keeps its place
-    instead of sliding left into the gap. Every run is judged as if its font
-    were Type3: a doubtful run then stays visible in the picture, not lost."""
+    """Segments of a damaged page without the doubtful runs (_doubtful); a
+    line is cut where one was, so the text after it keeps its place instead
+    of sliding left into the gap. A doubtful run stays visible in the
+    picture, not lost."""
     out = []
     for seg in segments:
         part = []
         for run in seg["runs"]:
-            if span_is_garbled(run["text"], True):
+            if _doubtful(run["text"]):
                 if part:
                     out.append({"runs": part})
                 part = []
@@ -153,28 +198,25 @@ def _run_rect(run) -> fitz.Rect:
     return fitz.Rect(run["x0"], run["origin_y"] - run["size"], run["x1"], run["origin_y"] + 0.35 * run["size"])
 
 
-def _page_content(src, pno: int, ocr_lang: str | None):
-    """(background picture, text segments, needs OCR but did not get it)."""
+def _page_content(src, pno: int, ocr_lang: str | None) -> PageContent:
     page = src[pno]
     scan = _layout_page_is_scan(page)
     broken = not scan and page_text_is_broken(page)
     if not (scan or broken):
         segments, rects = _collect_page_text(page)
         bg = _render_without_text(src, pno, rects, LAYOUT_BG_DPI, keep=_rotated_text_rects(page))
-        return bg, segments, False
-    if ocr_lang is None and broken:
-        # Without OCR the readable lines still become text; the garbled ones
+        return PageContent(bg, segments, False, False)
+    if ocr_lang is not None:
+        return _ocr_page(src, pno, broken, ocr_lang)
+    if broken:
+        # Without OCR the plain lines still become text; the doubtful ones
         # stay in the picture, where the PDF draws them correctly.
-        segments, _ = _collect_page_text(page)
-        segments = without_garbled(segments)
+        segments = without_garbled(_collect_page_text(page)[0])
         rects = [_run_rect(r) for sg in segments for r in sg["runs"]]
         bg = _render_without_text(src, pno, rects, LAYOUT_BG_DPI, keep=_rotated_text_rects(page))
-        return bg, segments, True
-    if ocr_lang is None:
-        pix = page.get_pixmap(dpi=LAYOUT_BG_DPI, alpha=False)
-        return Image.frombytes("RGB", (pix.width, pix.height), pix.samples), [], True
-    bg, segments = _ocr_page(src, pno, broken, ocr_lang)
-    return bg, segments, False
+        return PageContent(bg, segments, True, False)
+    pix = page.get_pixmap(dpi=LAYOUT_BG_DPI, alpha=False)
+    return PageContent(Image.frombytes("RGB", (pix.width, pix.height), pix.samples), [], True, False)
 
 
 def _lock(picture) -> None:
@@ -230,8 +272,9 @@ def pdf_to_pptx(in_path: str, out_path: str, ocr: bool) -> tuple[list[str], bool
             page = src[pno]
             slide = prs.slides.add_slide(blank)
             ox, oy, w, h = fit_box(page.rect.width, page.rect.height, prs.slide_width, prs.slide_height)
-            bg, segments, missed = _page_content(src, pno, ocr_lang)
+            bg, segments, missed, recognised = _page_content(src, pno, ocr_lang)
             unread += missed
+            ocr_ran |= recognised
             _lock(slide.shapes.add_picture(io.BytesIO(_image_bytes(bg.convert("RGB"))),
                                            Emu(ox), Emu(oy), Emu(w), Emu(h)))
             k = w / page.rect.width
@@ -239,7 +282,6 @@ def pdf_to_pptx(in_path: str, out_path: str, ocr: bool) -> tuple[list[str], bool
                 runs = [r for r in seg["runs"] if r["text"].strip()]
                 if runs:
                     _add_line(slide, runs, ox, oy, k)
-            ocr_ran |= bool(segments) and (_layout_page_is_scan(page) or page_text_is_broken(page))
         prs.save(out_path)
     finally:
         src.close()
