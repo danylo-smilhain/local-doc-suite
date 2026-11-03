@@ -46,13 +46,12 @@ def test_ordinary_text_page_is_not_broken(ocr, files):
         assert not ocr.page_text_is_broken(doc[0])
 
 
-def test_pptx_without_ocr_keeps_good_text_and_leaves_garbage_in_the_picture(api, files):
-    from test_pdf_to_pptx import slide_text, slides_of
+def test_pptx_without_ocr_leaves_a_damaged_page_a_picture(api, files):
+    from test_pdf_to_pptx import pictures, slides_of, text_boxes
     body, data = api.roundtrip(fx.garbled_text_pdf(files), "pptx")
-    text = slide_text(slides_of(data).slides[0])
-    assert fx.CLEAN_LINE in text
+    slide = slides_of(data).slides[0]
+    assert text_boxes(slide) == [] and len(pictures(slide)) == 1
     assert body.get("ocr_mode") is None              # nothing was recognised
-    assert "<5=546" not in text and "\x11" not in text
     assert "with OCR" in body["warning"]
 
 
@@ -74,13 +73,19 @@ def test_pdf_to_txt_reads_the_page_instead_of_the_garbage(api, files):
     assert "<5=546" not in text
 
 
-def test_outlines_under_a_line_that_became_text_leave_the_background(api, files):
+@needs_tesseract
+def test_only_what_ocr_recognised_leaves_the_background(api, files):
+    """Recognised words become text boxes and leave the picture; a mark OCR
+    could not read (here the square over "Clean") stays visible, so no
+    text is lost from the slide."""
     import io
 
     from PIL import Image
     from test_pdf_to_pptx import pictures, slides_of
-    _, data = api.roundtrip(fx.garbled_text_pdf(files), "pptx")
+    _, data = api.roundtrip(fx.garbled_text_pdf(files), "pptx-ocr")
     prs = slides_of(data)
     bg = Image.open(io.BytesIO(pictures(prs.slides[0])[0].image.blob)).convert("L")
     s = bg.width / 1440
-    assert bg.crop((int(121 * s), int(63 * s), int(131 * s), int(75 * s))).getextrema()[0] > 200
+    heading = bg.crop((int(195 * s), int(62 * s), int(285 * s), int(84 * s)))
+    square = bg.crop((int(121 * s), int(63 * s), int(131 * s), int(75 * s)))
+    assert heading.getextrema()[0] > 200 and square.getextrema()[1] < 60

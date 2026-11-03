@@ -56,28 +56,8 @@ def test_ocr_without_tesseract_says_so(pp):
     assert "Tesseract is not installed" in pp.scan_warning(2, ocr=True, tesseract=False)
 
 
-def test_garbled_runs_are_dropped_and_the_line_is_cut_there(pp):
-    run = lambda text, x0: {"text": text, "x0": x0, "x1": x0 + 50, "size": 10, "origin_y": 20}
-    segs = [{"runs": [run("Good start", 0), run("\x11@5=4", 60), run("good end", 120)]},
-            {"runs": [run("<5=546<5=B", 0)]}]
-    out = pp.without_garbled(segs)
-    assert [[r["text"] for r in s["runs"]] for s in out] == [["Good start"], ["good end"]]
-    assert out[1]["runs"][0]["x0"] == 120              # keeps its own place
-
-
 def run(text, x0=0):
     return {"text": text, "x0": x0, "x1": x0 + 50, "size": 10, "origin_y": 20}
-
-
-@pytest.mark.parametrize("text", ["PR B0 ><C=V:0FVW", "PR-70EV4 O:", "\x11@5=4"])
-def test_on_a_damaged_page_doubtful_runs_stay_in_the_picture(pp, text):
-    assert pp.without_garbled([{"runs": [run(text)]}]) == []
-
-
-@pytest.mark.parametrize("text", ["Clean heading here", "Digital PR", "презентації нових проєктів",
-                                  "2024 рік", "Що таке PR-захід?"])
-def test_on_a_damaged_page_plain_runs_become_text(pp, text):
-    assert pp.without_garbled([{"runs": [run(text)]}]) != []
 
 
 @pytest.mark.parametrize("w,h,dpi", [(595, 842, 300), (1920, 1080, 132), (1440, 810, 175)])
@@ -90,13 +70,6 @@ def test_a_title_slide_has_enough_words_for_ocr(pp):
     assert pp.ocr_found_text([seg("Спікер Марія Пальчук")])
     assert not pp.ocr_found_text([seg("Марія Пальчук")])
     assert not pp.ocr_found_text([seg("ii I1 . ~~ a")])  # photo noise
-
-
-def test_only_text_under_recognised_words_leaves_the_background(pp):
-    import fitz
-    title, body = fitz.Rect(100, 50, 600, 120), fitz.Rect(100, 300, 400, 330)
-    words = [(110, 305, 200, 328)]                       # OCR found only the body line
-    assert pp.rects_under_words([title, body], words) == [body]
 
 
 @pytest.mark.parametrize("fg,bg,expected", [((255, 255, 255), (242, 133, 46), "FFFFFF"),
@@ -118,3 +91,14 @@ def test_ocr_runs_use_a_sans_font(pp):
     run = pp.style_ocr_segments([seg], 1.0, img)[0]["runs"][0]
     assert run["fam"] == "sans" and run["font"] != "Times New Roman"
     assert run["color"] == "FFFFFF"
+    long = {"runs": [dict(seg["runs"][0], text="Спікер Марія Пальчук", size=20)]}
+    assert pp.style_ocr_segments([long], 1.0, img)[0]["runs"][0]["size"] < 20   # kept within x0..x1
+
+
+def test_ocr_line_is_shrunk_to_fit_its_place(pp):
+    size = pp.fit_size("Спікер Марія Пальчук", 40, width_pt=300)
+    assert size < 40
+    import fitz
+    assert fitz.Font("helv").text_length("Спікер Марія Пальчук", fontsize=size) <= 300.5
+    assert pp.fit_size("PR", 40, width_pt=300) == 40          # already fits: unchanged
+

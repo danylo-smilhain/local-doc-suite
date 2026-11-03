@@ -118,8 +118,7 @@ def garbled_text_pdf(directory: Path, name: str = "garbled.pdf") -> Path:
     page = doc.new_page(width=1440, height=810)
     page.insert_image(fitz.Rect(100, 150, 1100, 750), filename=str(png))
     page.insert_text((100, 80), CLEAN_LINE, fontsize=30)
-    # Canva draws the visible letters as vector outlines; a filled square
-    # inside the clean line stands for them
+    # a mark over the clean line that OCR cannot read as letters
     page.draw_rect(fitz.Rect(120, 62, 132, 76), color=None, fill=(0, 0, 0))
     # invisible: a viewer shows the right letters, only the text layer is wrong
     page.insert_text((100, 130), GARBLED_LINE, fontsize=30, render_mode=3)
