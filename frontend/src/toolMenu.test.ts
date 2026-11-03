@@ -114,4 +114,3 @@ describe('PDF to PPTX comes as two tools, like PDF to Word', () => {
     if (code !== 'en') expect(ocr.d, 'description is still English').not.toBe(english['pdf-to-pptx-ocr'].d);
   });
 });
-
