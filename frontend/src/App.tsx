@@ -33,7 +33,7 @@ export default function App() {
   const isRtl = langInfo.dir === 'rtl';
 
   const { files, setFiles, onDrop, removeFile, moveFile } = useUpload(activeTool, setStatus, setErrorInfo);
-  const { resultId, outMeta, setOutMeta, process } = useConversion(setStatus, setErrorInfo, (data) => {
+  const { resultId, outMeta, setOutMeta, warnings, process } = useConversion(setStatus, setErrorInfo, (data) => {
     addToHistory({
       id: Date.now(), tool: toolText(activeTool!.id).t,
       source: files.length > 1 ? `${files.length} files` : files[0].name,
@@ -81,7 +81,7 @@ export default function App() {
                      onBack={reset} onOpen={open}
                      filePanel={
                        <FilePanel t={t} status={status} tool={activeTool} title={toolText(activeTool.id).t}
-                                  files={files} outMeta={outMeta}
+                                  files={files} outMeta={outMeta} warnings={warnings}
                                   resultHref={downloadUrl(resultId, getDownloadName(files, activeTool))}
                                   errorText={errorMessage(t, errorInfo)}
                                   onProcess={() => process(files, activeTool)} onReset={reset}

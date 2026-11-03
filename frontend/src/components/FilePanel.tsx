@@ -16,6 +16,7 @@ type Props = {
   title: string;
   files: UploadedFile[];
   outMeta: FileMeta | null;
+  warnings: string[];
   resultHref: string;
   errorText: string;
   onProcess: () => void;
@@ -25,7 +26,7 @@ type Props = {
   onAddMore: () => void;
 };
 
-export function FilePanel({ t, status, tool, title, files, outMeta, resultHref, errorText,
+export function FilePanel({ t, status, tool, title, files, outMeta, warnings, resultHref, errorText,
                             onProcess, onReset, onRemove, onMove, onAddMore }: Props) {
   return (
     <div className="space-y-6 relative z-20">
@@ -53,7 +54,7 @@ export function FilePanel({ t, status, tool, title, files, outMeta, resultHref, 
         </div>
       )}
       {status === 'success' && (
-        <ResultPanel t={t} outMeta={outMeta} href={resultHref} onAgain={onReset} />
+        <ResultPanel t={t} outMeta={outMeta} href={resultHref} onAgain={onReset} warnings={warnings} />
       )}
       {status === 'error' && (
         <ErrorPanel t={t} message={errorText} onRetry={onReset} />

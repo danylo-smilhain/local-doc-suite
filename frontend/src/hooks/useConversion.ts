@@ -9,15 +9,18 @@ export function useConversion(setStatus: (s: Status) => void, setErrorInfo: (e: 
                               onSuccess: (data: ConvertSuccess) => void) {
   const [resultId, setResultId] = useState<string>('');
   const [outMeta, setOutMeta] = useState<FileMeta | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
 
   const process = async (files: UploadedFile[], tool: Tool) => {
     setStatus('converting');
     setErrorInfo(null);
+    setWarnings([]);
     try {
       const data = await convertFiles(files, tool.out);
       if (data.status === 'success') {
         setResultId(data.download_id);
         setOutMeta(data.meta);
+        setWarnings(data.warnings ?? []);
         setStatus('success');
         onSuccess(data);
       } else {
@@ -27,5 +30,5 @@ export function useConversion(setStatus: (s: Status) => void, setErrorInfo: (e: 
     } catch (err) { setStatus('error'); }
   };
 
-  return { resultId, outMeta, setOutMeta, process };
+  return { resultId, outMeta, setOutMeta, warnings, process };
 }

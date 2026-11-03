@@ -7,7 +7,8 @@ export const API_URL = 'http://127.0.0.1:8000/api';
 export type FileMeta = Record<string, any>;
 export type UploadedFile = { id: string; name: string; size: number; ext: string; meta: FileMeta };
 export type UploadReply = { ok: true; file: UploadedFile } | { ok: false; error: ApiErrorBody };
-export type ConvertSuccess = { status: 'success'; download_id: string; meta: FileMeta };
+// warnings: what the server wants the user to know about the result (in English)
+export type ConvertSuccess = { status: 'success'; download_id: string; meta: FileMeta; warnings?: string[] };
 export type ConvertReply = ConvertSuccess | (ApiErrorBody & { status?: undefined });
 
 export async function uploadFile(f: File): Promise<UploadReply> {

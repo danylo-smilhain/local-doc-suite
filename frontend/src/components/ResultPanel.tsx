@@ -1,12 +1,12 @@
 // Готово: метаданные результата и кнопка скачивания.
-import { CheckCircle, Download, Info } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Download, Info } from 'lucide-react';
 import type { FileMeta } from '../api';
 import type { Messages } from '../locales';
 import { MetaLine, MetaRows } from './MetaRows';
 
-type Props = { t: Messages; outMeta: FileMeta | null; href: string; onAgain: () => void };
+type Props = { t: Messages; outMeta: FileMeta | null; href: string; onAgain: () => void; warnings: string[] };
 
-export function ResultPanel({ t, outMeta, href, onAgain }: Props) {
+export function ResultPanel({ t, outMeta, href, onAgain, warnings }: Props) {
   return (
     <div className="space-y-6">
       <CheckCircle className="mx-auto text-green-500" size={64} />
@@ -17,6 +17,13 @@ export function ResultPanel({ t, outMeta, href, onAgain }: Props) {
               <p className="font-bold flex items-center mb-2 text-black"><Info size={16} className="me-1"/> {t.outputInfo}:</p>
               <MetaLine label={t.metaSize}>{(outMeta.size/1024/1024).toFixed(2)} MB</MetaLine>
                 <MetaRows t={t} meta={outMeta} fields={['pages', 'words']} />
+          </div>
+      )}
+
+      {warnings.length > 0 && (
+          <div role="note" className="flex items-start gap-2 text-start text-sm text-amber-900 bg-amber-50 border border-amber-300 rounded-lg p-4 max-w-xl mx-auto">
+              <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+              <ul className="space-y-1">{warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
           </div>
       )}
 
