@@ -51,6 +51,10 @@ BAD_TOKEN = re.compile(r'^(?=\S*[А-Яа-яІіЇїЄєҐґ])(?=\S*[A-Za-z0-9\[\
 # intact one <= 2 % (a literal "1=2"), hence the 5 % threshold.
 _CONTROL = re.compile(r"[\x01-\x08\x0e-\x1f]")
 _ODD_IN_WORD = re.compile(r"[;<=>@]|[:?](?=\S)")   # ":" / "?" at the end of a word are punctuation
+# A Canva font without a Unicode map keeps the low byte of each letter:
+# Cyrillic turns into digits, ":;<=>?@", capitals A-O and control characters,
+# never into lowercase Latin. A word with one (a link, an e-mail) is real text.
+_LATIN_LOWER = re.compile(r"[a-z]")
 GARBLED_SHARE = 0.05
 
 
@@ -65,7 +69,7 @@ def span_is_garbled(text: str, type3: bool) -> bool:
         return True
     if not type3:
         return False
-    odd = sum(1 for w in words if len(w) >= 2 and _ODD_IN_WORD.search(w))
+    odd = sum(1 for w in words if len(w) >= 2 and _ODD_IN_WORD.search(w) and not _LATIN_LOWER.search(w))
     return odd / len(words) >= 0.5
 
 

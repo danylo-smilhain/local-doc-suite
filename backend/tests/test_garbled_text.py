@@ -28,6 +28,9 @@ def test_garbled_spans(ocr, text, type3):
     ("CHER17 2024", True),               # letters with digits are normal
     ("a<=b; c=d;", False),               # code in an ordinary font is not garbled
     ("Бренд-менеджмент", True),
+    ("https://docs.google.com/sprea", True),   # links and e-mails have lowercase Latin letters,
+    ("hHU/edit?usp=sharing", True),            # which a Canva font never turns Cyrillic into
+    ("Пишіть: info@genius.space", True),
     ("", True),
 ])
 def test_normal_spans(ocr, text, type3):
