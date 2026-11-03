@@ -123,15 +123,16 @@ def two_column_scan_pdf(directory):
     import fitz
     from PIL import Image, ImageDraw
     png = directory / "columns.png"
-    img = Image.new("RGB", (1700, 600), "white")
+    img = Image.new("RGB", (1960, 2774), "white")     # the whole A4 sheet
     draw = ImageDraw.Draw(img)
     for i in range(3):
-        draw.text((60, 60 + i * 120), "Supplier delivered", fill="black", font=fx._font())
-        draw.text((960, 60 + i * 120), "customer paid cash", fill="black", font=fx._font())
+        draw.text((190, 200 + i * 120), "Supplier delivered", fill="black", font=fx._font())
+        draw.text((1090, 200 + i * 120), "customer paid cash", fill="black", font=fx._font())
     img.save(png)
     path = directory / "columns.pdf"
     doc = fitz.open()
-    doc.new_page(width=595, height=842).insert_image(fitz.Rect(40, 60, 555, 242), filename=str(png))
+    page = doc.new_page(width=595, height=842)
+    page.insert_image(page.rect, filename=str(png))
     doc.save(str(path))
     doc.close()
     return path

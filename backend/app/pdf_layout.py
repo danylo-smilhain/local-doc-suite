@@ -52,6 +52,7 @@ LAYOUT_MIN_FONT_PT = 3.0       # более мелкий текст оставл
 LAYOUT_SPLIT_GAP_EM = 1.6      # разрыв внутри строки (в кеглях) -> отдельная надпись
 LAYOUT_OCR_MIN_WORDS = 12      # меньше осмысленных слов — считаем, что текста нет
 LAYOUT_OCR_MIN_CONF = 55
+LAYOUT_SCAN_COVER = 0.9         # доля страницы под одной картинкой у скана (скриншот на слайде — до ~60%)
 LAYOUT_FIT_WIDTH = True        # подгонять ширину строки под ширину в PDF
 # Если шрифт Word шире шрифта PDF (узкие/condensed гарнитуры, например
 # AvenirNext Condensed в заголовках отчётов МВФ), строку сжимаем
@@ -280,6 +281,86 @@ def _line_segments(line):
     return segs
 
 
+def _paint_log(page):
+    """Рисунки и картинки страницы в порядке отрисовки: (номер в журнале
+    отрисовки, вид, рамка, непрозрачность 0..1). Заливка — со своей
+    непрозрачностью (Canva кладёт поверх слайда заливки с нулевой), обводка
+    считается непрозрачной на 0.5 (не закрывает того, что под ней), картинка
+    с маской — тоже 0.5."""
+    log = page.get_bboxlog()
+    opacity = {d["seqno"]: d.get("fill_opacity") for d in page.get_drawings()}
+    infos = page.get_image_info()
+    out, n_img = [], 0
+    for i, (kind, r) in enumerate(log):
+        if kind == "fill-path":
+            a = opacity.get(i)
+            out.append((i, kind, fitz.Rect(r), 1.0 if a is None else a))
+        elif kind == "stroke-path":
+            out.append((i, kind, fitz.Rect(r), 0.5))
+        elif kind == "fill-image":
+            masked = n_img >= len(infos) or infos[n_img].get("has-mask")
+            out.append((i, kind, fitz.Rect(r), 0.5 if masked else 1.0))
+            n_img += 1
+    return out
+
+
+def _hidden_text(page):
+    """Текст, закрытый тем, что нарисовано позже: непрозрачной заливкой или
+    картинкой без маски, целиком накрывающей его рамку (остаток шаблона Canva
+    под фоновой картинкой). Список (рамка, текст) по одной операции вывода."""
+    try:
+        covers = [(i, r) for i, _, r, a in _paint_log(page) if a >= 1]
+        traces = page.get_texttrace()
+    except Exception:
+        logger.debug("Suppressed error in _hidden_text()", exc_info=True)
+        return []
+    shown = {}
+    for t in traces:
+        box, text = shown.get(t["seqno"], (fitz.Rect(), ""))
+        shown[t["seqno"]] = (box | fitz.Rect(t["bbox"]), text + "".join(chr(c[0]) for c in t["chars"]))
+    under = {seq for seq, (box, _) in shown.items()
+             if any(i > seq and r.contains(box + (1, 1, -1, -1)) for i, r in covers)}
+    # Рамка картинки — без её обрезки: фото, обрезанное над подписью, своей
+    # рамкой накрывало подпись («Маркетинг» под банками Coca-Cola). Решают
+    # пиксели: текст, без которого страница в его рамке выглядит так же,
+    # скрыт. Если там же есть видимый текст, пиксели не различат — тогда
+    # остаётся вывод по рамкам («Марія Пальчук» шаблона под «Оленка Сергієнко»).
+    return [shown[seq] for seq in under
+            if any(shown[o][0].intersects(shown[seq][0]) for o in shown if o not in under)
+            or not _text_shows(page, shown[seq][0])]
+
+
+def _text_shows(page, box) -> bool:
+    """Меняется ли страница в рамке box, если убрать с неё весь текст."""
+    copy = fitz.open()
+    try:
+        copy.insert_pdf(page.parent, from_page=page.number, to_page=page.number)
+        bare = copy[0]
+        bare.add_redact_annot(bare.rect, fill=False)
+        bare.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=fitz.PDF_REDACT_LINE_ART_NONE)
+        clip = box & page.rect
+        if clip.is_empty:
+            return False
+        a = np.frombuffer(page.get_pixmap(clip=clip, dpi=72, alpha=False).samples, np.uint8)
+        b = np.frombuffer(bare.get_pixmap(clip=clip, dpi=72, alpha=False).samples, np.uint8)
+        return a.shape == b.shape and int(np.abs(a.astype(int) - b.astype(int)).max(initial=0)) > 40
+    finally:
+        copy.close()
+
+
+def _is_hidden(span, hidden) -> bool:
+    """Whether the span is one of the hidden pieces of text; a match is used
+    up, so the same words drawn again on top in the same place stay."""
+    text = (span.get("text") or "").strip()
+    box = fitz.Rect(span["bbox"])
+    centre = fitz.Point((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2)
+    for n, (h_box, h_text) in enumerate(hidden):
+        if text and text in h_text and centre in h_box:
+            del hidden[n]
+            return True
+    return False
+
+
 def _collect_page_text(page):
     """Горизонтальные строки страницы -> список надписей.
     Возвращает (segments, rects_to_remove)."""
@@ -292,6 +373,7 @@ def _collect_page_text(page):
     except Exception:
         logger.debug("Suppressed error in _collect_page_text()", exc_info=True)
         return segments, rects
+    hidden = _hidden_text(page)
     for block in blocks:
         if block.get("type") != 0:
             continue
@@ -299,6 +381,8 @@ def _collect_page_text(page):
             for s in line.get("spans", []):
                 if "chars" in s and "text" not in s:
                     s["text"] = "".join(ch.get("c", "") for ch in s["chars"])
+            if hidden:
+                line["spans"] = [s for s in line.get("spans", []) if not _is_hidden(s, hidden)]
             dx, dy = line.get("dir", (1.0, 0.0))
             if abs(dy) > 0.02 or dx <= 0:
                 continue  # повёрнутый текст остаётся в растре
@@ -586,10 +670,15 @@ def _ocr_segments(img, scale_pt, lang):
 
 
 def _layout_page_is_scan(page) -> bool:
+    """Скан — страница без текстового слоя, которую почти целиком занимает
+    одна картинка. Слайд без текста со скриншотами и рамками телефонов — не
+    скан: распознавать слова на скриншотах не нужно."""
     try:
         if page.get_text("text").strip():
             return False
-        return bool(page.get_images())
+        area = abs(page.rect)
+        return any(abs(fitz.Rect(i["bbox"]) & page.rect) >= LAYOUT_SCAN_COVER * area
+                   for i in page.get_image_info())
     except Exception:
         logger.debug("Suppressed error in _layout_page_is_scan()", exc_info=True)
         return False

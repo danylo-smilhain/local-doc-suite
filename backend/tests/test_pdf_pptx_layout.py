@@ -131,3 +131,17 @@ def test_bold_is_measured_from_the_thickness_of_the_letters(pp, font, bold, size
     width = fitz.Font(font).text_length("Maria", fontsize=size)
     assert pp.looks_bold(img, (20 * k, (120 - 0.75 * size) * k, (20 + width) * k, (120 + 0.05 * size) * k),
                          size * k) is bold
+
+
+def test_a_run_wider_in_arial_is_condensed_then_shrunk_to_its_width(pp):
+    import fitz
+    hebo = fitz.Font("hebo")
+    text = "Стратегічне планування"
+    wide = hebo.text_length(text, fontsize=25)
+    size, spacing = pp.fit_run(text, 25, "sans", True, False, wide * 0.97)     # a little narrower
+    assert size == 25 and -0.1 * 25 <= spacing < 0
+    assert abs(wide + spacing * len(text) - wide * 0.97) < 0.01
+    size, spacing = pp.fit_run(text, 25, "sans", True, False, wide * 0.7)      # much narrower
+    assert spacing == -0.1 * size and size < 25
+    assert abs(hebo.text_length(text, fontsize=size) + spacing * len(text) - wide * 0.7) < 0.01
+    assert pp.fit_run(text, 25, "sans", True, False, wide * 1.2) == (25, 0)     # narrower in Arial: as is

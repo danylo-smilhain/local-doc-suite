@@ -26,13 +26,16 @@ from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import MSO_AUTO_SIZE
+from pptx.oxml.ns import qn
 from pptx.util import Emu, Pt
 
 from app.ocr import (OCR_DPI, OCR_LANG_SAMPLE_PAGES, _choose_ocr_lang_order, _ocr_png, _render_page_png,
                      available_ocr_lang, page_text_is_broken)
-from app.pdf_layout import (_FONT_FAMILIES, LAYOUT_BG_DPI, LAYOUT_MIN_FONT_PT, _collect_page_text, _image_bytes, _inpaint_boxes,
-                            _layout_page_is_scan, _ocr_line_run, _render_without_text,
-                            _rotated_text_rects)
+from app.pdf_layout import (_FONT_FAMILIES, LAYOUT_BG_DPI, LAYOUT_GFX_CLUSTER_GAP_PT, LAYOUT_MIN_FONT_PT,
+                            LAYOUT_SCAN_COVER,
+                            _collect_page_text, _find_grid_tables, _image_bytes, _inpaint_boxes,
+                            _layout_page_is_scan, _metric_font, _ocr_line_run, _paint_log, _render_without_text,
+                            _rotated_text_rects, _text_decorations, _vector_table_primitives, _xy_cut)
 from app.pdf_text import repair_pdf_tounicode
 from app.slide_ocr import lines_of, read_slide_words
 
@@ -48,7 +51,6 @@ EMU_PER_PT = 12700
 BASELINE_EM = 0.9
 LINE_HEIGHT_EM = 1.25
 WIDTH_SLACK_EM = 0.3
-_A = "http://schemas.openxmlformats.org/drawingml/2006/main"
 # OCR works best on letters a few dozen pixels tall: as on an A4 page at
 # 300 dpi. A Canva slide is 1440-1920 pt wide; at 300 dpi its titles grow to
 # hundreds of pixels and Tesseract misreads them ("РЮ-зах!д" for "PR-захід").
@@ -56,6 +58,17 @@ OCR_LONG_SIDE_PX = 3508
 # Words of 3+ letters that make OCR output text and not photo noise. Word's
 # layout asks for 12 (a document page); a title slide has 3 to 7.
 SLIDE_OCR_MIN_WORDS = 3
+# A fill covering this share of the page (page colour, card, a side panel of
+# half the slide) is part of its backdrop, as is a picture covering it like a
+# scan does (a texture); a screenshot over 60% of a slide is not. The backdrop
+# is one locked picture.
+BACKDROP_SHARE = 0.4
+# A picture this opaque is stored without transparency (see _pieces).
+OPAQUE_PIECE = 0.9
+# Slide pictures are drawn at twice the slide's own resolution: 2880 px across
+# a 16:9 slide, more than a projector or a 4K screen shows of it. Word's 200
+# dpi (4000 px) made cut-out photos with transparency megabytes each.
+SLIDE_DPI = 144
 # The page is drawn once more without its pictures over this colour (magenta,
 # which slide text does not use) to tell the slide's own letters from text
 # inside its photos and screenshots.
@@ -134,10 +147,14 @@ def _ocr_lang_order(doc, pages: list[int], lang: str) -> str:
 
 
 class PageContent(NamedTuple):
-    background: Image.Image
+    """What one slide is made of, bottom to top: a locked background picture
+    (None when the page was split into objects), the page's own objects as
+    pictures (_split_objects: the backdrop first), and the text lines."""
+    background: Image.Image | None
     segments: list[dict]
     unread: bool        # its text needed OCR, which this tool does not run
     recognised: bool    # its text comes from OCR
+    objects: list[dict] = []
 
 
 def _ocr_page(page, lang: str, scan: bool) -> PageContent:
@@ -339,28 +356,182 @@ def ocr_found_text(segments: list[dict]) -> bool:
     return sum(1 for w in words if sum(c.isalpha() for c in w) >= 3) >= SLIDE_OCR_MIN_WORDS
 
 
+def _touch_point(box: fitz.Rect, avoid: list) -> fitz.Point | None:
+    """A point inside box and outside every rect of avoid, on a 9 x 9 grid."""
+    for fy in (.5, .1, .9, .3, .7, .2, .8, .4, .6):
+        for fx in (.5, .1, .9, .3, .7, .2, .8, .4, .6):
+            p = fitz.Point(box.x0 + fx * box.width, box.y0 + fy * box.height)
+            if not any(p in a for a in avoid):
+                return p
+    return None
+
+
+def _without_backdrop(src, pno: int, under: list, over: list):
+    """A copy of the page with every visible object painted up to the
+    backdrop removed (each touched by a redaction at a point no later visible
+    object covers), or None when that cannot be done exactly. under, over:
+    (kind, rect, opacity) in paint order."""
+    copy = fitz.open()
+    copy.insert_pdf(src, from_page=pno, to_page=pno)
+    page = copy[0]
+    avoid = [r + (-2, -2, 2, 2) for _, r, a in over if a > 0]
+    for images in (False, True):
+        targets = [r for kind, r, a in under if a > 0 and (kind == "fill-image") == images]
+        for r in targets:
+            p = _touch_point(r & page.rect, avoid)
+            if p is None:
+                return None
+            page.add_redact_annot(fitz.Rect(p.x - .1, p.y - .1, p.x + .1, p.y + .1), fill=False)
+        if targets:
+            page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_REMOVE if images else fitz.PDF_REDACT_IMAGE_NONE,
+                                  graphics=fitz.PDF_REDACT_LINE_ART_NONE if images
+                                  else fitz.PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED,
+                                  text=fitz.PDF_REDACT_TEXT_NONE)
+    key = lambda kind, r: (kind, tuple(round(v) for v in r))
+    left = sorted(key(kind, r) for _, kind, r, a in _paint_log(page) if a > 0)
+    if left != sorted(key(kind, r) for kind, r, a in over if a > 0):
+        return None
+    return copy
+
+
+def _pieces(rgba: Image.Image, full: Image.Image, scale_pt: float) -> list[dict]:
+    """A transparent render cut along empty gaps (pdf_layout._xy_cut, as the
+    Word layout cuts its graphics): one picture per piece, in points. A piece
+    that is nearly all opaque (a photo or phone with rounded corners) is taken
+    from the full page render instead, without transparency: a transparent
+    PNG of it was megabytes. Only sparse ones (logos, icons) stay transparent."""
+    alpha = np.asarray(rgba)[:, :, 3]
+    out = []
+    for n, (x0, y0, x1, y1) in enumerate(_xy_cut(alpha > 8, max(1, int(LAYOUT_GFX_CLUSTER_GAP_PT / scale_pt))), 1):
+        box = (max(0, x0 - 1), max(0, y0 - 1), min(rgba.width, x1 + 1), min(rgba.height, y1 + 1))
+        part = rgba.crop(box)
+        if (np.asarray(part)[:, :, 3] > 8).mean() >= OPAQUE_PIECE:
+            data = _image_bytes(full.crop(box).convert("RGB"))
+        else:
+            buf = io.BytesIO()
+            part.save(buf, format="PNG", optimize=True)
+            data = buf.getvalue()
+        out.append({"kind": "pic", "img": data, "x": box[0] * scale_pt, "y": box[1] * scale_pt,
+                    "w": (box[2] - box[0]) * scale_pt, "h": (box[3] - box[1]) * scale_pt, "name": f"Picture {n}"})
+    return out
+
+
+def _split_objects(src, pno: int, clear: list, keep: list) -> list[dict] | None:
+    """The page's objects for the slide, bottom to top. The backdrop (all
+    that is painted up to the last object covering half the page or more:
+    page colour, texture, card) is one picture with the places of the
+    objects above it filled in. Everything above it (photos, screenshots in
+    their phone frames, logos, icons, blocks, lines, charts) is drawn on a
+    transparent page without the backdrop and the text, and cut along the
+    empty gaps between them: one picture each. None: the backdrop cannot be
+    taken off exactly; the page stays one background picture."""
+    page = src[pno]
+    # every span, hidden ones too (a block's frame will not do: the layout
+    # trims each frame by 15% top and bottom and a list's first line escaped)
+    texts = [fitz.Rect(sp["bbox"]) for b in page.get_text("dict")["blocks"] if b.get("type") == 0
+             for line in b["lines"] for sp in line["spans"]]
+    paint = _paint_log(page)
+    log = [(kind, r, alpha) for _, kind, r, alpha in paint]
+    big = [n for n, (_, kind, r, alpha) in enumerate(paint) if alpha > 0
+           and abs(r & page.rect) >= (LAYOUT_SCAN_COVER if kind == "fill-image" else BACKDROP_SHARE) * abs(page.rect)]
+    under, over = (log[:max(big) + 1], log[max(big) + 1:]) if big else ([], log)
+    copy = _without_backdrop(src, pno, under, over)
+    if copy is None:
+        return None
+    try:
+        rgba = _render_without_text(copy, 0, texts, SLIDE_DPI, keep=keep, clear=clear, alpha=True)
+    finally:
+        copy.close()
+    full = _render_without_text(src, pno, texts, SLIDE_DPI, keep=keep, clear=clear)
+    objects = _pieces(rgba, full, 72.0 / SLIDE_DPI)
+    k = SLIDE_DPI / 72
+    # Under each object the backdrop is filled in with the colour around it,
+    # but only where the object has pixels: a circle on a card's corner must
+    # leave the rest of its square as it was.
+    filled = _inpaint_boxes(full, [(o["x"] * k, o["y"] * k, (o["x"] + o["w"]) * k, (o["y"] + o["h"]) * k)
+                                   for o in objects])
+    covered = (np.asarray(rgba)[:, :, 3] > 8)[:, :, None]
+    backdrop = Image.fromarray(np.where(covered, np.asarray(filled), np.asarray(full.convert("RGB"))))
+    return [{"kind": "pic", "img": _image_bytes(backdrop.convert("RGB")), "x": 0.0, "y": 0.0,
+             "w": page.rect.width, "h": page.rect.height, "name": "Background", "backdrop": True}] + objects
+
+
+def _text_page(src, pno: int) -> PageContent:
+    """A page with a real text layer (or none, and no scan under it): text
+    boxes over the page's own objects, split as for Word (photos and
+    screenshots, logos and icons, blocks and lines), with underlines and
+    highlights made text formatting. If the split cannot be done safely the
+    page stays one background picture under the text."""
+    page = src[pno]
+    segments, rects = _collect_page_text(page)
+    keep = _rotated_text_rects(page)
+    objects, clear = None, []
+    if not page.rotation:
+        try:
+            prims = _vector_table_primitives(page, with_meta=True)
+            grid = _find_grid_tables(prims[0], page.rect.width, page.rect.height, allow_single=True, fills=prims[1])
+            skip = set().union(*(g["seg_ids"] for g in grid))
+            _, clear = _text_decorations(segments, prims[0], prims[1], prims[3], grid, skip)
+            objects = _split_objects(src, pno, clear, keep)
+        except Exception as e:
+            logger.warning(f"Objects of page {pno + 1} not split: {e}")
+            segments, rects = _collect_page_text(page)      # undecorated again
+            objects, clear = None, []
+    segments = _weigh_unknown(segments, page)
+    if objects is None:
+        bg = _render_without_text(src, pno, rects, SLIDE_DPI, keep=keep, clear=clear)
+        return PageContent(bg, segments, False, False)
+    return PageContent(None, segments, False, False, objects)
+
+
 def _page_content(src, pno: int, ocr_lang: str | None) -> PageContent:
     page = src[pno]
     scan = _layout_page_is_scan(page)
     if not (scan or page_text_is_broken(page)):
-        segments, rects = _collect_page_text(page)
-        bg = _render_without_text(src, pno, rects, LAYOUT_BG_DPI, keep=_rotated_text_rects(page))
-        return PageContent(bg, _weigh_unknown(segments, page), False, False)
+        return _text_page(src, pno)
     if ocr_lang is not None:
         return _ocr_page(page, ocr_lang, scan)
     # A scan or a damaged text layer without OCR: the page stays as it looks.
-    pix = page.get_pixmap(dpi=LAYOUT_BG_DPI, alpha=False)
+    pix = page.get_pixmap(dpi=SLIDE_DPI, alpha=False)
     return PageContent(Image.frombytes("RGB", (pix.width, pix.height), pix.samples), [], True, False)
 
 
 def _lock(picture) -> None:
-    """The background must not move or resize when a click lands on it."""
-    c_nv = picture._element.find(f".//{{http://schemas.openxmlformats.org/presentationml/2006/main}}cNvPicPr")
-    locks = c_nv.find(f"{{{_A}}}picLocks")
+    """A background picture must not move or resize when a click lands on it."""
+    c_nv = picture._element.find(".//" + qn("p:cNvPicPr"))
+    locks = c_nv.find(qn("a:picLocks"))
     if locks is None:
-        locks = etree.SubElement(c_nv, f"{{{_A}}}picLocks")
+        locks = etree.SubElement(c_nv, qn("a:picLocks"))
     for attr in ("noMove", "noResize", "noRot"):
         locks.set(attr, "1")
+
+
+def fit_run(text: str, size: float, fam: str, bold: bool, italic: bool, width: float) -> tuple[float, float]:
+    """(size, letter spacing) in points that keep a run within the width it
+    had in the PDF once its font is replaced (Canva's narrow fonts are
+    narrower than Arial: text ran out of its block). Spacing first, down to
+    -0.1 em as in Word's layout, then a smaller size; a run that is narrower
+    in the substitute stays as it is."""
+    font = _metric_font(fam, bold, italic)
+    n = len(text)
+    measured = font.text_length(text, fontsize=size) if font is not None else 0.0
+    if n < 2 or measured <= width or width <= 0:
+        return size, 0.0
+    if (width - measured) / n >= -0.1 * size:
+        return size, (width - measured) / n
+    per_pt = measured / size - 0.1 * n            # width of the run per point of size at -0.1 em
+    fitted = max(LAYOUT_MIN_FONT_PT, width / per_pt) if per_pt > 0 else LAYOUT_MIN_FONT_PT
+    return fitted, -0.1 * fitted
+
+
+def _add_object(slide, it: dict, ox: int, oy: int, k: float, backdrop: bool) -> None:
+    """One picture of the page (see _split_objects) on the slide; the backdrop
+    is locked so a click on the slide does not drag it."""
+    shape = slide.shapes.add_picture(io.BytesIO(it["img"]), Emu(ox + round(it["x"] * k)), Emu(oy + round(it["y"] * k)),
+                                     Emu(max(1, round(it["w"] * k))), Emu(max(1, round(it["h"] * k))))
+    shape.name = it["name"]
+    if backdrop:
+        _lock(shape)
 
 
 def _add_line(slide, runs, ox: int, oy: int, k: float) -> None:
@@ -377,8 +548,16 @@ def _add_line(slide, runs, ox: int, oy: int, k: float) -> None:
         run = paragraph.add_run()
         run.text = r["text"]
         font = run.font
-        font.size = Pt(round(r["size"] * k / EMU_PER_PT, 1))
+        size, spacing = fit_run(r["text"], r["size"], r["fam"], r["bold"], r["italic"], r["x1"] - r["x0"])
+        font.size = Pt(round(size * k / EMU_PER_PT, 1))
+        if spacing:
+            font._rPr.set("spc", str(round(spacing * k / EMU_PER_PT * 100)))   # hundredths of a point
         font.bold, font.italic = r["bold"], r["italic"]
+        if r.get("underline"):
+            font.underline = True
+        if r.get("shade"):
+            etree.SubElement(etree.SubElement(font._rPr, qn("a:highlight")), qn("a:srgbClr")).set(
+                "val", str(r["shade"]).upper())
         font.name = r["font"]
         font.color.rgb = RGBColor.from_string(r["color"])
 
@@ -406,16 +585,20 @@ def pdf_to_pptx(in_path: str, out_path: str, ocr: bool) -> tuple[list[str], bool
             page = src[pno]
             slide = prs.slides.add_slide(blank)
             ox, oy, w, h = fit_box(page.rect.width, page.rect.height, prs.slide_width, prs.slide_height)
-            bg, segments, missed, recognised = _page_content(src, pno, ocr_lang)
+            bg, segments, missed, recognised, objects = _page_content(src, pno, ocr_lang)
             unread += missed
             ocr_ran |= recognised
-            _lock(slide.shapes.add_picture(io.BytesIO(_image_bytes(bg.convert("RGB"))),
-                                           Emu(ox), Emu(oy), Emu(w), Emu(h)))
+            if bg is not None:
+                _lock(slide.shapes.add_picture(io.BytesIO(_image_bytes(bg.convert("RGB"))),
+                                               Emu(ox), Emu(oy), Emu(w), Emu(h)))
             k = w / page.rect.width
+            for it in objects:
+                _add_object(slide, it, ox, oy, k, backdrop=it.get("backdrop", False))
             for seg in segments:
-                runs = [r for r in seg["runs"] if r["text"].strip()]
-                if runs:
-                    _add_line(slide, runs, ox, oy, k)
+                # a run of spaces inside a line stays (an underlined space
+                # between two words is a run of its own); blank lines go
+                if any(r["text"].strip() for r in seg["runs"]):
+                    _add_line(slide, seg["runs"], ox, oy, k)
         prs.save(out_path)
     finally:
         src.close()

@@ -151,15 +151,16 @@ def scanned_page_pdf(directory: Path, name: str = "page_scan.pdf") -> Path:
     import fitz
     from PIL import Image, ImageDraw
     png = directory / (name + ".png")
-    img = Image.new("RGB", (1700, 1200), "white")
+    img = Image.new("RGB", (1960, 2774), "white")      # the A4 sheet, text block at the top
     draw = ImageDraw.Draw(img)
     for i, line in enumerate(SCANNED_PAGE_LINES):
-        draw.text((60, 60 + i * 120), line, fill="black", font=_font())
+        draw.text((190, 200 + i * 120), line, fill="black", font=_font())
     img.save(png)
     path = directory / name
     doc = fitz.open()
     page = doc.new_page(width=595, height=842)
-    page.insert_image(fitz.Rect(40, 60, 555, 480), filename=str(png))
+    # a scanner gives the whole sheet: the text block with white margins
+    page.insert_image(page.rect, filename=str(png))
     doc.save(str(path))
     doc.close()
     png.unlink()
@@ -214,12 +215,22 @@ def _weightless(font_path: str) -> bytes:
     return bytes(data)
 
 
+def _unname_fonts(doc, page) -> None:
+    """Every font of the page renamed "Unnamed-T3", as Canva exports them."""
+    import re
+    for xref, *_ in page.get_fonts():
+        doc.xref_set_key(xref, "BaseFont", "/Unnamed-T3")
+        descendant = int(re.search(r"\d+", doc.xref_get_key(xref, "DescendantFonts")[1]).group())
+        doc.xref_set_key(descendant, "BaseFont", "/Unnamed-T3")
+        descriptor = int(re.search(r"\d+", doc.xref_get_key(descendant, "FontDescriptor")[1]).group())
+        doc.xref_set_key(descriptor, "FontName", "/Unnamed-T3")
+        doc.xref_set_key(descriptor, "Flags", "32")
+
+
 def unnamed_font_pdf(directory: Path, name: str = "unnamed_font.pdf") -> Path:
     """A 16:9 page like Canva's "Урок 1": "Спікер" regular and "Марія
     Пальчук" bold in one text span, both fonts called "Unnamed-T3" and
     neither marked bold anywhere."""
-    import re
-
     import fitz
     doc = fitz.open()
     page = doc.new_page(width=1440, height=810)
@@ -228,13 +239,155 @@ def unnamed_font_pdf(directory: Path, name: str = "unnamed_font.pdf") -> Path:
     page.insert_text((100, 200), "Спікер ", fontsize=40, fontname="F1")
     x = 100 + fitz.Font(fontfile=DEJAVU).text_length("Спікер ", fontsize=40)
     page.insert_text((x, 200), CANVA_BOLD_NAME, fontsize=40, fontname="F2")
-    for xref, *_ in page.get_fonts():
-        doc.xref_set_key(xref, "BaseFont", "/Unnamed-T3")
-        descendant = int(re.search(r"\d+", doc.xref_get_key(xref, "DescendantFonts")[1]).group())
-        doc.xref_set_key(descendant, "BaseFont", "/Unnamed-T3")
-        descriptor = int(re.search(r"\d+", doc.xref_get_key(descendant, "FontDescriptor")[1]).group())
-        doc.xref_set_key(descriptor, "FontName", "/Unnamed-T3")
-        doc.xref_set_key(descriptor, "Flags", "32")
+    _unname_fonts(doc, page)
+    path = directory / name
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
+LESSON_TITLE = "БРЕНД-МЕНЕДЖМЕНТ"
+LESSON_HIDDEN = "Марія Пальчук"          # a template's leftover, covered by the background
+LESSON_SPEAKER = "Оленка Сергієнко"
+LESSON_BLOCK = (110, 250, 410, 350)       # orange block with its narrow bold text inside
+LESSON_BLOCK_TEXT = "Стратегічне планування"
+LESSON_LOGO = (101, 106, 229, 124)        # six dots close together: one logo
+LESSON_PHOTO = (900, 250, 1230, 600)
+LESSON_LINE = (110, 690, 310, 705)        # a dark bar under the text
+LESSON_ICON = (700, 380, 760, 430)         # an icon right in the middle of the slide
+LESSON_BADGE = ((1380, 90), 70)            # a grey circle on the card's corner (centre, radius)
+LESSON_PHONES = [(100, 120, 400, 690), (570, 120, 870, 690), (1040, 120, 1340, 690)]
+LESSON_PHONE_TEXT = "Followers"
+LESSON_LIST = ["Довіра. Інфлюенсери мають довіру", "своєї аудиторії, що робить", "рекламу менш нав'язливою.",
+               "Охоплення та сегментація.", "Автентичність контенту,", "який виглядає природно.",
+               "Креатив. Отримання якісного", "контенту від професіонала."]     # one block of eight lines
+LESSON_BIG_SHOT = (81, 123, 1359, 686)   # a browser screenshot over 60% of a slide
+LESSON_CAPTION = "Маркетинг"              # under a picture cropped above it (slide 5 of Lesson 1)
+LESSON_PANEL = (729, -12, 1466, 843)      # a teal panel over half the slide
+LESSON_SIDE_PHOTO = (34, 540, 722, 790)  # a photo 7 pt from the panel
+LESSON_SPACED = "та лояльною аудиторією"   # its space alone is underlined (a stray Canva underline)
+LESSON_URL = ["https://docs.google.com/sprea", "dsheets/d/12CcHx2U0TgeUTgh", "hHU/edit?usp=sharing"]
+
+
+def _png(img) -> bytes:
+    import io
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def canva_lesson_pdf(directory: Path, name: str = "lesson.pdf") -> Path:
+    """Three 16:9 slides built the way Canva exports a lesson deck (fonts
+    "Unnamed-T3"):
+    1. a teal textured background image over a leftover name, a white card,
+       a logo of small vector dots, a photo, a dark bar, an orange block with
+       narrow bold text, a title and the speaker's name;
+    2. no text at all: three phone screenshots (with words in the pixels);
+    3. a link in several lines, underlined;
+    4. no text: one big browser screenshot and a logo;
+    5. no text: a teal panel over the right half with dots, a photo next to it."""
+    import random
+
+    import fitz
+    from PIL import Image, ImageDraw
+    rnd = random.Random(7)
+    doc = fitz.open()
+
+    page = doc.new_page(width=1440, height=810)
+    page.insert_font(fontname="F1", fontbuffer=_weightless(DEJAVU))
+    page.insert_font(fontname="F2", fontbuffer=_weightless(DEJAVU_BOLD))
+    page.draw_rect(page.rect, color=None, fill=(1, 1, 1))
+    page.insert_text((1000, 760), LESSON_HIDDEN, fontsize=28, fontname="F1")
+    texture = Image.new("RGB", (720, 405), (77, 168, 176))
+    for _ in range(4000):
+        x, y = rnd.randrange(720), rnd.randrange(405)
+        texture.putpixel((x, y), (70 + rnd.randrange(20), 160 + rnd.randrange(20), 170 + rnd.randrange(15)))
+    page.insert_image(page.rect, stream=_png(texture))
+    page.draw_rect(fitz.Rect(81, 72, 1395, 738), color=None, fill=(1, 1, 1), radius=0.03)
+    for i in range(6):
+        page.draw_circle((110 + i * 22, 115), 9, color=None, fill=(0.05, 0.05, 0.05))
+    photo = Image.new("RGB", (330, 350))
+    ImageDraw.Draw(photo).rectangle((0, 0, 330, 175), fill=(230, 40, 90))
+    ImageDraw.Draw(photo).ellipse((80, 120, 250, 300), fill=(200, 140, 60))
+    page.insert_image(fitz.Rect(*LESSON_PHOTO), stream=_png(photo))
+    page.draw_rect(fitz.Rect(*LESSON_LINE), color=None, fill=(0.03, 0.31, 0.35))
+    page.draw_oval(fitz.Rect(*LESSON_ICON), color=None, fill=(0.9, 0.2, 0.4))
+    page.draw_circle(LESSON_BADGE[0], LESSON_BADGE[1], color=None, fill=(0.87, 0.85, 0.83))
+    page.draw_rect(fitz.Rect(*LESSON_BLOCK), color=None, fill=(1, 0.45, 0.12), radius=0.2)
+    # a narrow font, as Canva's: drawn compressed, it is narrower than Arial Bold
+    page.insert_text((125, 310), LESSON_BLOCK_TEXT, fontsize=28, fontname="F2",
+                     morph=(fitz.Point(125, 310), fitz.Matrix(0.7, 1.15)))
+    page.insert_text((194, 480), LESSON_TITLE, fontsize=60, fontname="F2")
+    page.insert_text((500, 420), "\n".join(LESSON_LIST), fontsize=24, fontname="F1")
+    page.insert_text((1000, 690), LESSON_SPEAKER, fontsize=28, fontname="F1")
+    # the template's name drawn again, visible this time (Lesson 1 has both)
+    page.insert_text((1000, 760), LESSON_HIDDEN, fontsize=28, fontname="F1")
+    # Canva ends a slide with invisible fills over the card (opacity 0)
+    page.draw_rect(fitz.Rect(81, 72, 1395, 738), color=None, fill=(1, 1, 1), fill_opacity=0)
+    _unname_fonts(doc, page)
+
+    page = doc.new_page(width=1440, height=810)
+    page.draw_rect(page.rect, color=None, fill=(1, 1, 1))
+    # a phone frame: a square picture, wider than the screen, cropped in Canva
+    # to the phone; uncropped it overlaps the next screenshot
+    frame = Image.new("RGBA", (600, 600), (0, 0, 0, 0))
+    ImageDraw.Draw(frame).rounded_rectangle((140, 6, 460, 594), 40, outline=(20, 20, 20, 255), width=14)
+    for box in LESSON_PHONES:
+        shot = Image.new("RGB", (300, 570), (245, 245, 245))
+        ImageDraw.Draw(shot).text((30, 60), LESSON_PHONE_TEXT, fill="black", font=_font())
+        ImageDraw.Draw(shot).text((30, 160), "2 024", fill="black", font=_font())
+        page.insert_image(fitz.Rect(*box), stream=_png(shot))
+    framed = fitz.open()
+    framed.new_page(width=600, height=600).insert_image(fitz.Rect(0, 0, 600, 600), stream=_png(frame))
+    for x0, y0, x1, y1 in LESSON_PHONES:
+        mid, half = (x0 + x1) / 2, (y1 - y0 + 12) / 2 * 1.3
+        place = fitz.Rect(mid - half, y0 - 6, mid + half, y1 + 6)
+        k = 600 / place.width                                     # crop in the frame's own points
+        crop = fitz.Rect((x0 - 12 - place.x0) * k, 0, (x1 + 12 - place.x0) * k, 600)
+        page.show_pdf_page(fitz.Rect(x0 - 12, place.y0, x1 + 12, place.y1), framed, 0, clip=crop)
+
+    page = doc.new_page(width=1440, height=810)
+    page.insert_font(fontname="F1", fontbuffer=_weightless(DEJAVU))
+    page.draw_rect(page.rect, color=None, fill=(1, 1, 1))
+    page.insert_text((575, 120), "Шаблон списку блогерів:", fontsize=35, fontname="F1")
+    page.insert_text((60, 700), LESSON_SPACED, fontsize=30, fontname="F1")
+    dejavu = fitz.Font(fontfile=DEJAVU)
+    gap = dejavu.text_length("та лояльною", fontsize=30)
+    page.draw_rect(fitz.Rect(60 + gap, 704, 60 + gap + dejavu.text_length(" ", fontsize=30), 706),
+                   color=None, fill=(0, 0, 0))
+    for i, line in enumerate(LESSON_URL):
+        y = 200 + i * 42
+        page.insert_text((575, y), line, fontsize=35, fontname="F1", color=(0, 0.59, 0.65))
+        width = fitz.Font(fontfile=DEJAVU).text_length(line, fontsize=35)
+        page.draw_rect(fitz.Rect(575, y + 4, 575 + width, y + 6.5), color=None, fill=(0, 0.59, 0.65))
+    _unname_fonts(doc, page)
+
+    page = doc.new_page(width=1440, height=810)
+    page.draw_rect(page.rect, color=None, fill=(1, 1, 1))
+    shot = Image.new("RGB", (640, 282), (250, 250, 250))
+    ImageDraw.Draw(shot).rectangle((20, 30, 420, 240), fill=(40, 60, 90))
+    ImageDraw.Draw(shot).text((440, 40), "Views", fill="black", font=_font())
+    page.insert_image(fitz.Rect(*LESSON_BIG_SHOT), stream=_png(shot))
+    for i in range(6):
+        page.draw_circle((1270 + i * 22, 760), 9, color=None, fill=(0.05, 0.05, 0.05))
+
+    page = doc.new_page(width=1440, height=810)
+    page.insert_font(fontname="F1", fontbuffer=_weightless(DEJAVU))
+    page.draw_rect(page.rect, color=None, fill=(1, 1, 1))
+    page.insert_text((40, 400), LESSON_CAPTION, fontsize=30, fontname="F1")
+    # a tall picture cropped to its top part: its frame covers the caption,
+    # its visible part does not
+    tall = fitz.open()
+    tall.new_page(width=344, height=400).insert_image(fitz.Rect(0, 0, 344, 400),
+                                                      stream=_png(Image.new("RGB", (344, 400), (200, 40, 40))))
+    page.show_pdf_page(fitz.Rect(34, 20, 378, 420), tall, 0, clip=fitz.Rect(0, 0, 344, 200))
+    page.draw_rect(fitz.Rect(*LESSON_PANEL), color=None, fill=(0.22, 0.51, 0.56))
+    for i in range(5):
+        page.draw_circle((800, 115 + i * 66), 10, color=None, fill=(1, 1, 1))
+    side = Image.new("RGB", (344, 125), (200, 160, 120))
+    ImageDraw.Draw(side).ellipse((60, 10, 280, 115), fill=(90, 60, 40))
+    page.insert_image(fitz.Rect(*LESSON_SIDE_PHOTO), stream=_png(side))
+
     path = directory / name
     doc.save(str(path))
     doc.close()
