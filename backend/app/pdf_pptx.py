@@ -54,6 +54,9 @@ OCR_LONG_SIDE_PX = 3508
 # Words of 3+ letters that make OCR output text and not photo noise. Word's
 # layout asks for 12 (a document page); a title slide has 3 to 7.
 SLIDE_OCR_MIN_WORDS = 3
+# A gap between two OCR words wider than this many font sizes is not a space
+# but the gap between two columns (a normal space is about a third of one).
+COLUMN_GAP_EM = 1.5
 
 
 def slide_size(width_pt: float, height_pt: float) -> tuple[int, int]:
@@ -137,8 +140,8 @@ def _ocr_page(page, lang: str) -> PageContent:
         segments, boxes = [], []
     if not ocr_found_text(segments):
         return PageContent(full_img, [], False, False)
-    return PageContent(_inpaint_boxes(full_img, boxes), style_ocr_segments(segments, 72.0 / dpi, full_img),
-                       False, True)
+    return PageContent(_inpaint_boxes(full_img, boxes),
+                       style_ocr_segments(split_at_gaps(segments), 72.0 / dpi, full_img), False, True)
 
 
 def text_colour(img: Image.Image) -> str:
@@ -156,6 +159,27 @@ def text_colour(img: Image.Image) -> str:
         return "000000"
     ink = [p for p, d in zip(pixels, dist) if d >= 0.6 * far]
     return "".join("%02X" % round(sum(p[i] for p in ink) / len(ink)) for i in range(3))
+
+
+def split_at_gaps(segments: list[dict]) -> list[dict]:
+    """Tesseract may join words of two columns into one line; split each OCR
+    line where the gap between words is a column gap, so every part keeps
+    its own place on the slide."""
+    out = []
+    for seg in segments:
+        run = seg["runs"][0]
+        parts, current = [], []
+        for word in run.get("words") or []:
+            if current and word[0] - current[-1][1] > COLUMN_GAP_EM * run["size"]:
+                parts.append(current); current = []
+            current.append(word)
+        if len(parts) == 0:
+            out.append(seg)
+            continue
+        for words in parts + [current]:
+            out.append(dict(seg, runs=[dict(run, words=words, text=" ".join(w[2] for w in words),
+                                            x0=words[0][0], x1=words[-1][1])]))
+    return out
 
 
 def fit_size(text: str, size: float, width_pt: float) -> float:

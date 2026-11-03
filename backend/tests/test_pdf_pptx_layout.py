@@ -102,3 +102,17 @@ def test_ocr_line_is_shrunk_to_fit_its_place(pp):
     assert fitz.Font("helv").text_length("Спікер Марія Пальчук", fontsize=size) <= 300.5
     assert pp.fit_size("PR", 40, width_pt=300) == 40          # already fits: unchanged
 
+
+
+def test_ocr_line_across_two_columns_is_split_at_the_gap(pp):
+    """Tesseract can join words of two columns into one line; on a slide each
+    column keeps its own text box in its own place."""
+    words = [(10, 60, "WHITE"), (66, 150, "WEDDING"), (400, 470, "Канади"), (476, 500, "на")]
+    seg = {"runs": [{"text": "WHITE WEDDING Канади на", "size": 20, "x0": 10, "x1": 500, "origin_y": 30,
+                     "font": "Arial", "fam": "sans", "bold": False, "italic": False, "color": "000000",
+                     "words": words}]}
+    left, right = (s["runs"][0] for s in pp.split_at_gaps([seg]))
+    assert (left["text"], left["x0"], left["x1"]) == ("WHITE WEDDING", 10, 150)
+    assert (right["text"], right["x0"], right["x1"]) == ("Канади на", 400, 500)
+    assert right["origin_y"] == 30 and right["size"] == 20
+    assert len(pp.split_at_gaps([{"runs": [dict(seg["runs"][0], words=words[:2])]}])) == 1

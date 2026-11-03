@@ -116,3 +116,32 @@ def test_with_ocr_pages_that_have_text_keep_their_own_text(api, files):
     body, data = api.roundtrip(canva_like_pdf(files), "pptx-ocr")
     assert body.get("ocr_mode") is None          # nothing to recognise
     assert "Lesson slide 1" in slide_text(slides_of(data).slides[0])
+
+
+def two_column_scan_pdf(directory):
+    """A scanned page with two columns that Tesseract reads as one line each."""
+    import fitz
+    from PIL import Image, ImageDraw
+    png = directory / "columns.png"
+    img = Image.new("RGB", (1700, 600), "white")
+    draw = ImageDraw.Draw(img)
+    for i in range(3):
+        draw.text((60, 60 + i * 120), "Supplier delivered", fill="black", font=fx._font())
+        draw.text((960, 60 + i * 120), "customer paid cash", fill="black", font=fx._font())
+    img.save(png)
+    path = directory / "columns.pdf"
+    doc = fitz.open()
+    doc.new_page(width=595, height=842).insert_image(fitz.Rect(40, 60, 555, 242), filename=str(png))
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
+@needs_tesseract
+def test_with_ocr_each_column_keeps_its_own_place(api, files):
+    _, data = api.roundtrip(two_column_scan_pdf(files), "pptx-ocr")
+    prs = slides_of(data)
+    pt = prs.slide_width / 595
+    right = [b for b in text_boxes(prs.slides[0]) if "customer" in b.text_frame.text]
+    assert len(right) == 3
+    assert all("Supplier" not in b.text_frame.text and b.left / pt > 300 for b in right)
