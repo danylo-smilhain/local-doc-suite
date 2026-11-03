@@ -95,24 +95,39 @@ def test_ocr_runs_use_a_sans_font(pp):
     assert pp.style_ocr_segments([long], 1.0, img)[0]["runs"][0]["size"] < 20   # kept within x0..x1
 
 
-def test_ocr_line_is_shrunk_to_fit_its_place(pp):
-    size = pp.fit_size("Спікер Марія Пальчук", 40, width_pt=300)
-    assert size < 40
+def test_ocr_line_takes_the_size_that_fills_its_width(pp):
+    """A word box is as tall as its tallest letters ("покази" has none), so
+    the height misjudges the size; the width of the line does not."""
     import fitz
-    assert fitz.Font("helv").text_length("Спікер Марія Пальчук", fontsize=size) <= 300.5
-    assert pp.fit_size("PR", 40, width_pt=300) == 40          # already fits: unchanged
+    helv = fitz.Font("helv")
+    width = helv.text_length("- покази", fontsize=28)       # the line as wide as 28 pt text
+    assert abs(pp.line_size("- покази", 17, width) - 28) < 0.01  # boxes said 17 pt: grown
+    width = helv.text_length("Спікер Марія Пальчук", fontsize=28)
+    assert abs(pp.line_size("Спікер Марія Пальчук", 40, width) - 28) < 0.01   # said 40: shrunk
 
 
+def test_a_line_of_a_few_letters_keeps_its_height_size_within_its_width(pp):
+    assert pp.line_size("1)", 30, width_pt=300) == 30            # too short to judge by width
+    assert pp.line_size("1)", 30, width_pt=10) < 30
 
-def test_ocr_line_across_two_columns_is_split_at_the_gap(pp):
-    """Tesseract can join words of two columns into one line; on a slide each
-    column keeps its own text box in its own place."""
-    words = [(10, 60, "WHITE"), (66, 150, "WEDDING"), (400, 470, "Канади"), (476, 500, "на")]
-    seg = {"runs": [{"text": "WHITE WEDDING Канади на", "size": 20, "x0": 10, "x1": 500, "origin_y": 30,
-                     "font": "Arial", "fam": "sans", "bold": False, "italic": False, "color": "000000",
-                     "words": words}]}
-    left, right = (s["runs"][0] for s in pp.split_at_gaps([seg]))
-    assert (left["text"], left["x0"], left["x1"]) == ("WHITE WEDDING", 10, 150)
-    assert (right["text"], right["x0"], right["x1"]) == ("Канади на", 400, 500)
-    assert right["origin_y"] == 30 and right["size"] == 20
-    assert len(pp.split_at_gaps([{"runs": [dict(seg["runs"][0], words=words[:2])]}])) == 1
+
+def test_line_size_never_goes_below_the_smallest_size_written(pp):
+    from app.pdf_layout import LAYOUT_MIN_FONT_PT
+    assert pp.line_size("a long line in a sliver of space", 20, width_pt=1) == LAYOUT_MIN_FONT_PT
+
+
+@pytest.mark.parametrize("font,bold", [("helv", False), ("hebo", True), ("tiro", False)])
+@pytest.mark.parametrize("size", [14, 30, 80])     # 14 pt at 132 dpi: 26 px, above MIN_WEIGH_PX
+@pytest.mark.parametrize("dpi", [132, 200])
+def test_bold_is_measured_from_the_thickness_of_the_letters(pp, font, bold, size, dpi):
+    import fitz
+    from PIL import Image
+    doc = fitz.open()
+    page = doc.new_page(width=600, height=200)
+    page.insert_text((20, 120), "Maria Brand", fontsize=size, fontname=font)
+    k = dpi / 72
+    pix = page.get_pixmap(dpi=dpi, alpha=False)
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    width = fitz.Font(font).text_length("Maria", fontsize=size)
+    assert pp.looks_bold(img, (20 * k, (120 - 0.75 * size) * k, (20 + width) * k, (120 + 0.05 * size) * k),
+                         size * k) is bold

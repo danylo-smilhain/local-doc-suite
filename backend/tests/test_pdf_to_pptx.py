@@ -145,3 +145,34 @@ def test_with_ocr_each_column_keeps_its_own_place(api, files):
     right = [b for b in text_boxes(prs.slides[0]) if "customer" in b.text_frame.text]
     assert len(right) == 3
     assert all("Supplier" not in b.text_frame.text and b.left / pt > 300 for b in right)
+
+
+@needs_tesseract
+def test_with_ocr_a_coloured_title_is_recognised(api, files):
+    _, data = api.roundtrip(fx.canva_scan_pdf(files), "pptx-ocr")
+    assert fx.CANVA_TITLE in slide_text(slides_of(data).slides[0])
+
+
+@needs_tesseract
+def test_with_ocr_an_english_word_in_ukrainian_text_stays_latin(api, files):
+    _, data = api.roundtrip(fx.canva_scan_pdf(files), "pptx-ocr")
+    assert fx.CANVA_LATIN_LINE in slide_text(slides_of(data).slides[0])
+
+
+def runs_of(slide):
+    return [r for b in text_boxes(slide) for p in b.text_frame.paragraphs for r in p.runs if r.text.strip()]
+
+
+def test_bold_is_seen_in_a_font_that_does_not_say_it(api, files):
+    """Canva exports fonts without names or weights ("Unnamed-T3"); bold is
+    then read from how thick the letters are, word by word."""
+    _, data = api.roundtrip(fx.unnamed_font_pdf(files), "pptx")
+    runs = runs_of(slides_of(data).slides[0])
+    assert [(r.text.strip(), bool(r.font.bold)) for r in runs] == [("Спікер", False), (fx.CANVA_BOLD_NAME, True)]
+
+
+@needs_tesseract
+def test_with_ocr_bold_words_stay_bold(api, files):
+    _, data = api.roundtrip(fx.canva_scan_pdf(files), "pptx-ocr")
+    weight = {r.text.strip(): bool(r.font.bold) for r in runs_of(slides_of(data).slides[0])}
+    assert weight[fx.CANVA_BOLD_NAME] and not weight["Спікер"] and weight[fx.CANVA_TITLE]

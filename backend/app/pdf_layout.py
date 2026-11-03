@@ -14,7 +14,7 @@ from docx.oxml.ns import qn
 from docx.shared import Pt
 from PIL import Image
 
-from app.ocr import OCR_CONFIG, OCR_DPI, OCR_LANG, page_text_is_broken
+from app.ocr import OCR_CONFIG, OCR_DPI, OCR_LANG, page_text_is_broken, span_font_is_type3
 from app.pdf_flow import _cluster
 
 logger = logging.getLogger(__name__)
@@ -320,6 +320,8 @@ def _collect_page_text(page):
                         "bold": bold, "italic": italic,
                         "color": "%06X" % (int(s.get("color", 0)) & 0xFFFFFF),
                         "x0": x0, "x1": x1, "origin_y": s.get("origin", (x0, y1))[1],
+                        # шрифт без имени (Canva: Unnamed-T3) не говорит, жирный ли он
+                        "weight_unknown": span_font_is_type3(s),
                     }
                     if chars and "".join(c[0] for c in chars) == text:
                         run["chars"] = [(c[1], c[2]) for c in chars]
@@ -524,6 +526,28 @@ def _inpaint_boxes(img, boxes_px, pad=2):
     return Image.fromarray(arr)
 
 
+def _ocr_line_run(words, scale_pt):
+    """Одна строка OCR -> run в координатах страницы (или None, если текста
+    нет). words: (x0, y0, x1, y1, text, ...) в пикселях, слева направо."""
+    x0 = min(w[0] for w in words); x1 = max(w[2] for w in words)
+    bottom = statistics.median([w[3] for w in words])
+    h_pt = statistics.median([w[3] - w[1] for w in words]) * scale_pt
+    size = max(LAYOUT_MIN_FONT_PT, min(72.0, h_pt / 0.72))
+    text = _clean_xml_text(" ".join(w[4] for w in words))
+    if not text:
+        return None
+    return {
+        "text": text, "size": size, "font": _FONT_FAMILIES["serif"][0], "fam": "serif",
+        "bold": False, "italic": False, "color": "000000",
+        "x0": x0 * scale_pt, "x1": x1 * scale_pt,
+        # базовая линия ~ низ букв без выносных элементов
+        "origin_y": bottom * scale_pt - 0.2 * size * 0.72,
+        # слова с координатами: строку, пересекающую ячейки таблицы,
+        # режем по словам между ячейками
+        "words": [(w[0] * scale_pt, w[2] * scale_pt, _clean_xml_text(w[4])) for w in words],
+    }
+
+
 def _ocr_segments(img, scale_pt, lang):
     """tesseract -> надписи в координатах страницы + пиксельные рамки слов."""
     data = pytesseract.image_to_data(img, lang=lang, config=OCR_CONFIG,
@@ -545,23 +569,9 @@ def _ocr_segments(img, scale_pt, lang):
     for key in sorted(lines):
         words = sorted(lines[key])
         boxes.extend(w[:4] for w in words)
-        x0 = min(w[0] for w in words); x1 = max(w[2] for w in words)
-        bottom = statistics.median([w[3] for w in words])
-        h_pt = statistics.median([w[3] - w[1] for w in words]) * scale_pt
-        size = max(LAYOUT_MIN_FONT_PT, min(72.0, h_pt / 0.72))
-        text = _clean_xml_text(" ".join(w[4] for w in words))
-        if not text:
-            continue
-        segments.append({"par": key[:2], "runs": [{
-            "text": text, "size": size, "font": _FONT_FAMILIES["serif"][0], "fam": "serif",
-            "bold": False, "italic": False, "color": "000000",
-            "x0": x0 * scale_pt, "x1": x1 * scale_pt,
-            # базовая линия ~ низ букв без выносных элементов
-            "origin_y": bottom * scale_pt - 0.2 * size * 0.72,
-            # слова с координатами: строку, пересекающую ячейки таблицы,
-            # режем по словам между ячейками
-            "words": [(w[0] * scale_pt, w[2] * scale_pt, _clean_xml_text(w[4])) for w in words],
-        }]})
+        run = _ocr_line_run(words, scale_pt)
+        if run:
+            segments.append({"par": key[:2], "runs": [run]})
     # Высота рамок слов скачет (есть ли в строке выносные элементы), поэтому
     # кегль выравниваем по медиане абзаца — иначе строки абзаца «пляшут».
     by_par = {}

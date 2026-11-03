@@ -13,6 +13,7 @@ import zipfile
 from pathlib import Path
 
 DEJAVU = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+DEJAVU_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 PDF_TEXT = "Quarterly report about apples and oranges"
 DOCX_TEXT = "Hello from a Word document"
@@ -101,22 +102,39 @@ GARBLED_LINE = "\x11@5=4-<5=546<5=B PR B0 \x1a><C=V:0FVW"
 CLEAN_LINE = "Clean heading here"
 
 
+SCREENSHOT_LINE = "Caption inside photo"
+OVERLAY_LINE = "Overlay title"
+
+
+def _outlined_lines(lines, width, height, size, color=(0, 0, 0)):
+    """A one-page PDF with the lines drawn as vector outlines and no text,
+    as Canva draws letters whose font it exported without a Unicode map."""
+    import fitz
+    src = fitz.open()
+    page = src.new_page(width=width, height=height)
+    for i, line in enumerate(lines):
+        page.insert_text((35, 50 + i * 60), line, fontsize=size, color=color)
+    svg = page.get_svg_image(text_as_path=True)
+    return fitz.open(stream=fitz.open("svg", svg.encode()).convert_to_pdf(), filetype="pdf")
+
+
 def garbled_text_pdf(directory: Path, name: str = "garbled.pdf") -> Path:
-    """A 16:9 page whose readable words are a picture (what a viewer shows for
-    the broken font) with a garbled text line over it, plus one line of
-    normal text."""
+    """A 16:9 page like the damaged Canva deck: the readable words are vector
+    outlines with a garbled text line over them, plus one line of normal
+    text and a dark photo with a caption in it (text that belongs to the
+    photo) under a white outlined title (text the slide puts on the photo)."""
     import fitz
     from PIL import Image, ImageDraw
     png = directory / (name + ".png")
-    img = Image.new("RGB", (1700, 1200), "white")
-    draw = ImageDraw.Draw(img)
-    for i, line in enumerate(SCANNED_PAGE_LINES):
-        draw.text((60, 60 + i * 120), line, fill="black", font=_font())
+    img = Image.new("RGB", (900, 600), (30, 50, 80))
+    ImageDraw.Draw(img).text((40, 410), SCREENSHOT_LINE, fill=(230, 230, 230), font=_font())
     img.save(png)
     path = directory / name
     doc = fitz.open()
     page = doc.new_page(width=1440, height=810)
-    page.insert_image(fitz.Rect(100, 150, 1100, 750), filename=str(png))
+    page.show_pdf_page(fitz.Rect(100, 150, 1100, 750), _outlined_lines(SCANNED_PAGE_LINES, 1000, 600, 36), 0)
+    page.insert_image(fitz.Rect(1110, 540, 1410, 740), filename=str(png))
+    page.show_pdf_page(fitz.Rect(1110, 545, 1410, 605), _outlined_lines([OVERLAY_LINE], 300, 60, 36, (1, 1, 1)), 0)
     page.insert_text((100, 80), CLEAN_LINE, fontsize=30)
     # a mark over the clean line that OCR cannot read as letters
     page.draw_rect(fitz.Rect(120, 62, 132, 76), color=None, fill=(0, 0, 0))
@@ -145,6 +163,81 @@ def scanned_page_pdf(directory: Path, name: str = "page_scan.pdf") -> Path:
     doc.save(str(path))
     doc.close()
     png.unlink()
+    return path
+
+
+CANVA_TITLE = "БРЕНД МЕНЕДЖМЕНТ"
+CANVA_LATIN_LINE = "CASE для журналістів з різних міст"
+CANVA_BOLD_NAME = "Марія Пальчук"
+
+
+def canva_scan_pdf(directory: Path, name: str = "canva_scan.pdf") -> Path:
+    """A 16:9 slide that is only a picture, coloured like the Canva decks:
+    a teal border, a white card, a big orange title, and Ukrainian body text
+    with an English word. The orange is as bright as the teal in grey, so
+    Tesseract's own binarisation loses the title."""
+    import fitz
+    from PIL import Image, ImageDraw, ImageFont
+    png = directory / (name + ".png")
+    img = Image.new("RGB", (2880, 1620), (77, 168, 176))
+    draw = ImageDraw.Draw(img)
+    draw.rounded_rectangle((120, 120, 2760, 1500), 40, fill="white")
+    draw.text((240, 400), CANVA_TITLE, font=ImageFont.truetype(DEJAVU_BOLD, 180), fill=(255, 133, 51))
+    body = ImageFont.truetype(DEJAVU, 56)
+    draw.text((240, 1100), CANVA_LATIN_LINE, font=body, fill="black")
+    draw.text((240, 1250), "Спікер ", font=body, fill="black")
+    draw.text((240 + draw.textlength("Спікер ", font=body), 1250), CANVA_BOLD_NAME,
+              font=ImageFont.truetype(DEJAVU_BOLD, 56), fill="black")
+    img.save(png)
+    path = directory / name
+    doc = fitz.open()
+    page = doc.new_page(width=1440, height=810)
+    page.insert_image(page.rect, filename=str(png))
+    doc.save(str(path))
+    doc.close()
+    png.unlink()
+    return path
+
+
+def _weightless(font_path: str) -> bytes:
+    """The font file with every mark of its weight cleared (head.macStyle,
+    OS/2 usWeightClass and fsSelection): a viewer draws it as it is, but
+    nothing says it is bold, as with Canva's unnamed Type3 fonts."""
+    import struct
+    data = bytearray(Path(font_path).read_bytes())
+    count = struct.unpack(">H", data[4:6])[0]
+    tables = {bytes(data[12 + 16 * i:16 + 16 * i]): struct.unpack(">I", data[20 + 16 * i:24 + 16 * i])[0]
+              for i in range(count)}
+    struct.pack_into(">H", data, tables[b"head"] + 44, 0)
+    struct.pack_into(">H", data, tables[b"OS/2"] + 4, 400)
+    struct.pack_into(">H", data, tables[b"OS/2"] + 62, 0x40)
+    return bytes(data)
+
+
+def unnamed_font_pdf(directory: Path, name: str = "unnamed_font.pdf") -> Path:
+    """A 16:9 page like Canva's "Урок 1": "Спікер" regular and "Марія
+    Пальчук" bold in one text span, both fonts called "Unnamed-T3" and
+    neither marked bold anywhere."""
+    import re
+
+    import fitz
+    doc = fitz.open()
+    page = doc.new_page(width=1440, height=810)
+    page.insert_font(fontname="F1", fontbuffer=_weightless(DEJAVU))
+    page.insert_font(fontname="F2", fontbuffer=_weightless(DEJAVU_BOLD))
+    page.insert_text((100, 200), "Спікер ", fontsize=40, fontname="F1")
+    x = 100 + fitz.Font(fontfile=DEJAVU).text_length("Спікер ", fontsize=40)
+    page.insert_text((x, 200), CANVA_BOLD_NAME, fontsize=40, fontname="F2")
+    for xref, *_ in page.get_fonts():
+        doc.xref_set_key(xref, "BaseFont", "/Unnamed-T3")
+        descendant = int(re.search(r"\d+", doc.xref_get_key(xref, "DescendantFonts")[1]).group())
+        doc.xref_set_key(descendant, "BaseFont", "/Unnamed-T3")
+        descriptor = int(re.search(r"\d+", doc.xref_get_key(descendant, "FontDescriptor")[1]).group())
+        doc.xref_set_key(descriptor, "FontName", "/Unnamed-T3")
+        doc.xref_set_key(descriptor, "Flags", "32")
+    path = directory / name
+    doc.save(str(path))
+    doc.close()
     return path
 
 
