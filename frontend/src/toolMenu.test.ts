@@ -94,3 +94,24 @@ describe('MOBI, M4A and TS tool texts are translated, not the English fallback',
     }
   });
 });
+
+describe('PDF to PPTX comes as two tools, like PDF to Word', () => {
+  type ToolTexts = Record<string, { t: string; d: string }>;
+  it('has "No OCR" and "with OCR" in toolsConfig and the PDF menu', () => {
+    const outs = Object.fromEntries(toolsConfig.map((t) => [t.id, t.out]));
+    expect([outs['pdf-to-pptx'], outs['pdf-to-pptx-ocr']]).toEqual(['pptx', 'pptx-ocr']);
+    expect(TOOL_MENU.convertFromPdf).toContain('pdf-to-pptx-ocr');
+  });
+  it.each(LANGUAGES.map((l) => l.code))('%s titles both name PPTX and OCR and differ', async (code) => {
+    const tools = (await loadMessages(code)).tools as ToolTexts;
+    const english = en.tools as ToolTexts;
+    const [plain, ocr] = [tools['pdf-to-pptx'], tools['pdf-to-pptx-ocr']];
+    for (const t of [plain, ocr]) {
+      expect(t.t).toContain('PPTX');
+      expect(t.t).toContain('OCR');
+    }
+    expect(plain.t).not.toBe(ocr.t);
+    if (code !== 'en') expect(ocr.d, 'description is still English').not.toBe(english['pdf-to-pptx-ocr'].d);
+  });
+});
+

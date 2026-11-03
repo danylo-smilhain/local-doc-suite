@@ -63,10 +63,10 @@ describe('home page', () => {
     expect(cards.map((h) => h.textContent)).toContain('PDF to TXT');
     expect(cards.map((h) => h.textContent)).toContain('DOC to DOCX');
     for (const title of ['MOBI to EPUB', 'MOBI to AZW3', 'MOBI to PDF', 'MOBI to Markdown', 'M4A to MP3',
-      'TS to WebM', 'TS to MP4', 'TS to MP3']) {
+      'TS to WebM', 'TS to MP4', 'TS to MP3', 'PDF to PPTX (No OCR)', 'PDF to PPTX (with OCR)']) {
       expect(cards.map((h) => h.textContent)).toContain(title);
     }
-    expect(cards).toHaveLength(55);
+    expect(cards).toHaveLength(56);
   });
 
   it('filters tools by the MERGE / CONVERT / OCR buttons', () => {
@@ -83,7 +83,7 @@ describe('home page', () => {
     const { container } = render(createElement(App));
     fireEvent.click(screen.getByRole('button', { name: /All tools/ }));
     const menu = screen.getByRole('navigation', { name: 'All tools' });
-    expect(within(menu).getAllByRole('button')).toHaveLength(55);
+    expect(within(menu).getAllByRole('button')).toHaveLength(56);
     fireEvent.click(within(menu).getByRole('button', { name: 'WebM to MP4' }));
     expect(screen.getByRole('heading', { level: 2, name: 'WebM to MP4' })).toBeTruthy();
     expect(container.querySelector('#all-tools-menu')).toBeNull();

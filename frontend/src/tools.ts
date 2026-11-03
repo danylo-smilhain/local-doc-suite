@@ -16,6 +16,7 @@ export const toolsConfig: Tool[] = [
   { id: 'pdf-to-epub', icon: icon({ from: 'pdf', to: 'epub' }), out: 'epub', category: 'convert' },
   { id: 'pdf-to-fb2', icon: icon({ from: 'pdf', to: 'fb2' }), out: 'fb2', category: 'convert' },
   { id: 'pdf-to-pptx', icon: icon({ from: 'pdf', to: 'pptx' }), out: 'pptx', category: 'convert' },
+  { id: 'pdf-to-pptx-ocr', icon: icon({ from: 'pdf', to: 'pptx', kind: 'ocr' }), out: 'pptx-ocr', category: 'convert' },
   { id: 'word-to-txt', icon: icon({ from: 'docx', to: 'txt' }), out: 'txt', category: 'convert' },
   { id: 'word-to-md', icon: icon({ from: 'docx', to: 'md' }), out: 'md', category: 'convert' },
   { id: 'word-to-epub', icon: icon({ from: 'docx', to: 'epub' }), out: 'epub', category: 'convert' },
@@ -71,7 +72,8 @@ export const toolsConfig: Tool[] = [
 export const TOOL_MENU = {
   merge: ['merge-docx', 'merge-pdf', 'merge-txt', 'merge-md', 'merge-pptx', 'merge-html', 'merge-epub',
     'merge-fb2', 'merge-txt-md', 'merge-docx-md', 'merge-pdf-md', 'merge-html-md', 'merge-html-pdf'],
-  convertFromPdf: ['pdf-to-txt', 'pdf-to-md', 'pdf-to-word', 'pdf-to-word-ocr', 'pdf-to-epub', 'pdf-to-fb2', 'pdf-to-pptx'],
+  convertFromPdf: ['pdf-to-txt', 'pdf-to-md', 'pdf-to-word', 'pdf-to-word-ocr', 'pdf-to-epub', 'pdf-to-fb2', 'pdf-to-pptx',
+    'pdf-to-pptx-ocr'],
   convertToPdf: ['word-to-pdf', 'epub-to-pdf', 'fb2-to-pdf', 'azw3-to-pdf', 'mobi-to-pdf', 'html-to-pdf', 'pptx-to-pdf'],
   documents: ['doc-to-docx', 'word-to-txt', 'word-to-md', 'html-to-md', 'html-to-docx', 'html-to-txt', 'md-to-txt', 'txt-to-md',
     'pptx-to-docx', 'pptx-to-md'],

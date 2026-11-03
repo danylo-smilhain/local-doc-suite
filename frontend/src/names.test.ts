@@ -14,6 +14,10 @@ describe('getDownloadName', () => {
   it('keeps the base name and uses the tool output extension', () => {
     expect(getDownloadName([file('My.Report.pdf')], tool('pdf-to-md'))).toBe('My.Report.md');
   });
+  it('maps pptx-ocr to .pptx', () => {
+    expect(getDownloadName([file('Lesson 1.pdf')], tool('pdf-to-pptx-ocr'))).toBe('Lesson 1.pptx');
+  });
+
   it('maps docx-ocr to .docx', () => {
     expect(getDownloadName([file('scan.pdf')], tool('pdf-to-word-ocr'))).toBe('scan.docx');
   });

@@ -14,7 +14,8 @@ export const formatDuration = (seconds: number) => {
 export const getDownloadName = (files: UploadedFile[], tool: Tool | null) => {
   if (!files || files.length === 0 || !tool) return `document`;
   const baseName = files[0].name.replace(/\.[^/.]+$/, '');
-  const ext = tool.out === 'docx-ocr' ? 'docx' : tool.out;
+  // 'docx-ocr', 'pptx-ocr': the same file type made with OCR (as TargetFormat.out_ext)
+  const ext = tool.out.replace(/-ocr$/, '');
   if (tool.category === 'merge' && files.length > 1) {
     return `Merged_${baseName}.${ext}`;
   }
