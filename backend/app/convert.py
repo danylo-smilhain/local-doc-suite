@@ -34,6 +34,7 @@ from app.encoding import read_text_file
 from app.engines import LIBREOFFICE_PDF_SOURCES, engine_libreoffice, engine_pandoc
 from app.errors import DependencyMissing, EbookInputError, ErrorCode
 from app.media import video_to_mp3, video_to_mp4, video_to_webm
+from app.pdf_pptx import pdf_to_pptx
 from app.merge import convert_to_text_format, merge_docx, merge_to_pdf
 from app.ocr import _ocr_png, available_ocr_lang, extract_pdf_text_cached, pdf_text_layer_is_broken
 from app.pdf_flow import (
@@ -173,6 +174,12 @@ def _pdf_ocr_flow(job: Job) -> None:
         pdf_ocr_to_docx(job.in_path, job.out_path)
     out.engine = "ocr-flow"
     out.warn("Текстовий шар PDF пошкоджено, документ розпізнано через OCR")
+
+
+def pdf_pptx(job: Job) -> None:
+    for warning in pdf_to_pptx(job.in_path, job.out_path):
+        job.outcome.warn(warning)
+    job.outcome.engine = "pymupdf"
 
 
 def pdf_to_text(job: Job) -> None:
@@ -442,6 +449,7 @@ SINGLE: dict[tuple[str, str], Handler] = {
     ("pdf", "docx"): pdf_to_docx,
     ("pdf", "txt"): pdf_to_text,
     ("pdf", "md"): pdf_to_text,
+    ("pdf", "pptx"): pdf_pptx,
     ("pdf", ANY): pandoc_default,
     ("txt", "md"): txt_to_md,
     ("txt", ANY): txt_via_md,

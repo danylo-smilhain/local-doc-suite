@@ -22,6 +22,9 @@ def old_single(s, t, o, tg):
     if s == "pdf":
         if t in ("docx-ocr", "docx"): return "pdf_docx"
         if t in ("txt", "md"): return "pdf_text"
+        # added after the refactor: PDF -> PPTX has its own converter
+        # (it fell through to pandoc, which cannot read PDF)
+        if o == "pptx": return "pdf_pptx"
         return "pandoc"
     if s == "txt": return "txt_md" if o == "md" else "txt_via_md"
     # added after the refactor: MOBI reads like AZW3; only MOBI -> AZW3 (Calibre)
@@ -78,7 +81,7 @@ def NEW(c):
            c.merge_concat_then_pandoc: "concat",
             c.image_to_text: "image_text", c.doc_to_docx: "doc_docx",
             c.kindle_to_azw3: "kindle_azw3", c.azw3_target_unsupported: "azw3_target_unsupported",
-            c.video_webm: "video_webm", c.webm_target_unsupported: "webm_target_unsupported"}
+            c.video_webm: "video_webm", c.pdf_pptx: "pdf_pptx", c.webm_target_unsupported: "webm_target_unsupported"}
 
 
 PAIRS = [(s.value, t) for s in SourceExt for t in TargetFormat]
