@@ -43,9 +43,53 @@ def page_is_scan(page) -> bool:
 
 BAD_TOKEN = re.compile(r'^(?=\S*[А-Яа-яІіЇїЄєҐґ])(?=\S*[A-Za-z0-9\[\]{}_\\|~^])\S{3,}$')
 
+# A font that lost its Unicode mapping keeps only the low byte of each letter
+# (Canva exports with unnamed Type3 fonts): "Бренд-менеджмент" comes out as
+# "\x11@5=4-<5=546<5=B". Capitals become control characters, which real text
+# never has; lower case becomes digits, ";<=>@" and Latin capitals. Measured
+# on two Canva decks: a broken one had >= 8 % such text on every page, an
+# intact one <= 2 % (a literal "1=2"), hence the 5 % threshold.
+_CONTROL = re.compile(r"[\x01-\x08\x0e-\x1f]")
+_ODD_IN_WORD = re.compile(r"[;<=>@]|[:?](?=\S)")   # ":" / "?" at the end of a word are punctuation
+GARBLED_SHARE = 0.05
+
+
+def span_is_garbled(text: str, type3: bool) -> bool:
+    """Text of one span read through a font without a Unicode mapping.
+    Odd symbols inside words count only for Type3 fonts: in an ordinary
+    font they are code or formulas ("a<b")."""
+    words = text.split()
+    if not words:
+        return False
+    if _CONTROL.search(text):
+        return True
+    if not type3:
+        return False
+    odd = sum(1 for w in words if len(w) >= 2 and _ODD_IN_WORD.search(w))
+    return odd / len(words) >= 0.5
+
+
+def span_font_is_type3(span) -> bool:
+    return (span.get("font") or "").endswith("-T3") or not span.get("font")
+
+
+def _garbled_share(page) -> float:
+    total = bad = 0
+    for block in page.get_text("dict").get("blocks", []):
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                n = len("".join(span.get("text", "").split()))
+                total += n
+                if n and span_is_garbled(span["text"], span_font_is_type3(span)):
+                    bad += n
+    return bad / total if total else 0.0
+
+
 def page_text_is_broken(page) -> bool:
     try:
         words = page.get_text("text").split()
+        if _garbled_share(page) >= GARBLED_SHARE:
+            return True
     except Exception:
         logger.debug("Suppressed error in page_text_is_broken()", exc_info=True)
         return False

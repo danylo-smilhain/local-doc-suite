@@ -1,4 +1,4 @@
-"""Slide geometry and notes text for PDF -> PPTX, without files (app.pdf_pptx).
+"""Slide and text-box geometry and the user warning for PDF -> PPTX, without files (app.pdf_pptx).
 
 app.pdf_pptx pulls in app.config (through app.ocr), so it is imported only
 after the harness has set up storage, as in test_routing_table.py."""
@@ -33,9 +33,14 @@ def test_other_page_size_is_centred_not_stretched(pp):
     assert left == (sw - w) // 2 and left > 0
 
 
-def test_notes_text_drops_xml_invalid_characters(pp):
-    assert pp.notes_text("  Title\x0cnext\x0bpage\x00 \n") == "Titlenextpage"
-    assert pp.notes_text("Привіт\tсвіт\n") == "Привіт\tсвіт"
+def test_line_box_puts_the_baseline_on_the_pdf_baseline(pp):
+    runs = [{"size": 20, "x0": 100, "x1": 180, "origin_y": 300},
+            {"size": 40, "x0": 180, "x1": 300, "origin_y": 300}]
+    left, top, width, height = pp.line_box(runs)
+    assert left == 100
+    assert top == 300 - pp.BASELINE_EM * 40           # the largest run sets the line
+    assert width == 200 + pp.WIDTH_SLACK_EM * 40
+    assert top < 300 < top + height
 
 
 def test_no_scans_or_recognised_scans_need_no_warning(pp):
@@ -43,9 +48,18 @@ def test_no_scans_or_recognised_scans_need_no_warning(pp):
     assert pp.scan_warning(3, ocr=True, tesseract=True) is None
 
 
-def test_scans_without_ocr_point_to_the_ocr_tool(pp):
+def test_unreadable_pages_without_ocr_point_to_the_ocr_tool(pp):
     assert "PDF to PPTX (with OCR)" in pp.scan_warning(2, ocr=False, tesseract=True)
 
 
 def test_ocr_without_tesseract_says_so(pp):
     assert "Tesseract is not installed" in pp.scan_warning(2, ocr=True, tesseract=False)
+
+
+def test_garbled_runs_are_dropped_and_the_line_is_cut_there(pp):
+    run = lambda text, x0: {"text": text, "x0": x0, "x1": x0 + 50, "size": 10, "origin_y": 20}
+    segs = [{"runs": [run("Good start", 0), run("\x11@5=4", 60), run("good end", 120)]},
+            {"runs": [run("<5=546<5=B", 0)]}]
+    out = pp.without_garbled(segs)
+    assert [[r["text"] for r in s["runs"]] for s in out] == [["Good start"], ["good end"]]
+    assert out[1]["runs"][0]["x0"] == 120              # keeps its own place

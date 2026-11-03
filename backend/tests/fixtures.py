@@ -95,6 +95,37 @@ SCANNED_PAGE_LINES = [
 ]
 
 
+# What a Canva export with a broken Cyrillic font gives as text: only the low
+# byte of each letter survives ("Бренд-менеджмент" -> "\x11@5=4-<5=546<5=B").
+GARBLED_LINE = "\x11@5=4-<5=546<5=B PR B0 \x1a><C=V:0FVW"
+CLEAN_LINE = "Clean heading here"
+
+
+def garbled_text_pdf(directory: Path, name: str = "garbled.pdf") -> Path:
+    """A 16:9 page whose readable words are a picture (what a viewer shows for
+    the broken font) with a garbled text line over it, plus one line of
+    normal text."""
+    import fitz
+    from PIL import Image, ImageDraw
+    png = directory / (name + ".png")
+    img = Image.new("RGB", (1700, 1200), "white")
+    draw = ImageDraw.Draw(img)
+    for i, line in enumerate(SCANNED_PAGE_LINES):
+        draw.text((60, 60 + i * 120), line, fill="black", font=_font())
+    img.save(png)
+    path = directory / name
+    doc = fitz.open()
+    page = doc.new_page(width=1440, height=810)
+    page.insert_image(fitz.Rect(100, 150, 1100, 750), filename=str(png))
+    page.insert_text((100, 80), CLEAN_LINE, fontsize=30)
+    # invisible: a viewer shows the right letters, only the text layer is wrong
+    page.insert_text((100, 130), GARBLED_LINE, fontsize=30, render_mode=3)
+    doc.save(str(path))
+    doc.close()
+    png.unlink()
+    return path
+
+
 def scanned_page_pdf(directory: Path, name: str = "page_scan.pdf") -> Path:
     """A PDF page that is only a picture of a full page of English text."""
     import fitz
