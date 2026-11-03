@@ -30,7 +30,7 @@ from pptx.util import Emu, Pt
 
 from app.ocr import (OCR_DPI, OCR_LANG_SAMPLE_PAGES, _choose_ocr_lang_order, _ocr_png, _render_page_png,
                      available_ocr_lang, page_text_is_broken, span_is_garbled)
-from app.pdf_layout import (LAYOUT_BG_DPI, _collect_page_text, _image_bytes, _inpaint_boxes,
+from app.pdf_layout import (_FONT_FAMILIES, LAYOUT_BG_DPI, _collect_page_text, _image_bytes, _inpaint_boxes,
                             _layout_page_is_scan, _ocr_segments, _render_without_text,
                             _rotated_text_rects)
 from app.pdf_text import repair_pdf_tounicode
@@ -145,11 +145,51 @@ def _ocr_page(src, pno: int, broken: bool, lang: str) -> PageContent:
         _, rects = _collect_page_text(page)
         k = 72.0 / dpi
         words = [(b[0] * k, b[1] * k, b[2] * k, b[3] * k) for b in boxes]
-        bg = _render_without_text(src, pno, rects_under_words(rects, words), dpi,
-                                  keep=_rotated_text_rects(page))
+        gone = rects_under_words(rects, words)
+        bg = _render_without_text(src, pno, gone, dpi, keep=_rotated_text_rects(page),
+                                  clear=outline_clear(gone))
     else:
         bg = _inpaint_boxes(full_img, boxes)
-    return PageContent(bg, segments, False, True)
+    return PageContent(bg, style_ocr_segments(segments, 72.0 / dpi, full_img), False, True)
+
+
+def outline_clear(rects: list) -> list:
+    """Areas whose vector graphics go with the text. Canva draws the visible
+    letters as vector outlines over a separate text layer, so removing the
+    text layer alone leaves the letters in the picture, doubled by the text
+    box. The rects grow by 15 % of the line height: descenders and accents
+    reach past the text-layer box."""
+    return [fitz.Rect(r.x0 - 0.15 * r.height, r.y0 - 0.15 * r.height,
+                      r.x1 + 0.15 * r.height, r.y1 + 0.15 * r.height) for r in map(fitz.Rect, rects)]
+
+
+def text_colour(img: Image.Image) -> str:
+    """Colour of the letters in a crop around a recognised line: the pixels
+    farthest from the background (the median of the crop's border)."""
+    rgb = img.convert("RGB")
+    w, h = rgb.size
+    px = rgb.load()
+    border = [px[x, y] for x in range(w) for y in (0, h - 1)] + [px[x, y] for y in range(h) for x in (0, w - 1)]
+    bg = tuple(sorted(c[i] for c in border)[len(border) // 2] for i in range(3))
+    pixels = list(rgb.getdata())
+    dist = [sum((a - b) ** 2 for a, b in zip(p, bg)) for p in pixels]
+    far = max(dist)
+    if far == 0:
+        return "000000"
+    ink = [p for p, d in zip(pixels, dist) if d >= 0.6 * far]
+    return "".join("%02X" % round(sum(p[i] for p in ink) / len(ink)) for i in range(3))
+
+
+def style_ocr_segments(segments: list[dict], scale_pt: float, img: Image.Image) -> list[dict]:
+    """OCR runs come out black Times New Roman; on a slide they take a sans
+    font and the colour of their letters in the page picture."""
+    for seg in segments:
+        for r in seg["runs"]:
+            box = (r["x0"] / scale_pt, (r["origin_y"] - 0.9 * r["size"]) / scale_pt,
+                   r["x1"] / scale_pt, (r["origin_y"] + 0.25 * r["size"]) / scale_pt)
+            r["font"], r["fam"] = _FONT_FAMILIES["sans"][0], "sans"
+            r["color"] = text_colour(img.crop(tuple(round(v) for v in box)))
+    return segments
 
 
 def ocr_dpi(width_pt: float, height_pt: float) -> int:
@@ -213,7 +253,8 @@ def _page_content(src, pno: int, ocr_lang: str | None) -> PageContent:
         # stay in the picture, where the PDF draws them correctly.
         segments = without_garbled(_collect_page_text(page)[0])
         rects = [_run_rect(r) for sg in segments for r in sg["runs"]]
-        bg = _render_without_text(src, pno, rects, LAYOUT_BG_DPI, keep=_rotated_text_rects(page))
+        bg = _render_without_text(src, pno, rects, LAYOUT_BG_DPI, keep=_rotated_text_rects(page),
+                                  clear=outline_clear(rects))
         return PageContent(bg, segments, True, False)
     pix = page.get_pixmap(dpi=LAYOUT_BG_DPI, alpha=False)
     return PageContent(Image.frombytes("RGB", (pix.width, pix.height), pix.samples), [], True, False)

@@ -97,3 +97,24 @@ def test_only_text_under_recognised_words_leaves_the_background(pp):
     title, body = fitz.Rect(100, 50, 600, 120), fitz.Rect(100, 300, 400, 330)
     words = [(110, 305, 200, 328)]                       # OCR found only the body line
     assert pp.rects_under_words([title, body], words) == [body]
+
+
+@pytest.mark.parametrize("fg,bg,expected", [((255, 255, 255), (242, 133, 46), "FFFFFF"),
+                                            ((0, 0, 0), (255, 255, 255), "000000"),
+                                            ((20, 90, 100), (245, 245, 245), "145A64")])
+def test_ocr_text_colour_is_the_letters_not_the_background(pp, fg, bg, expected):
+    from PIL import Image, ImageDraw
+    img = Image.new("RGB", (120, 40), bg)
+    ImageDraw.Draw(img).rectangle((20, 10, 100, 30), fill=fg)   # the "letters"
+    assert pp.text_colour(img) == expected
+
+
+def test_ocr_runs_use_a_sans_font(pp):
+    from PIL import Image, ImageDraw
+    seg = {"runs": [{"text": "Спікер", "font": "Times New Roman", "fam": "serif", "color": "000000",
+                     "x0": 10, "x1": 90, "origin_y": 30, "size": 20}]}
+    img = Image.new("RGB", (100, 40), (242, 133, 46))
+    ImageDraw.Draw(img).rectangle((12, 15, 88, 29), fill=(255, 255, 255))
+    run = pp.style_ocr_segments([seg], 1.0, img)[0]["runs"][0]
+    assert run["fam"] == "sans" and run["font"] != "Times New Roman"
+    assert run["color"] == "FFFFFF"

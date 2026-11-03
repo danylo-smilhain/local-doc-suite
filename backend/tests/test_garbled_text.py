@@ -72,3 +72,15 @@ def test_pdf_to_txt_reads_the_page_instead_of_the_garbage(api, files):
     text = data.decode("utf-8")
     assert "SUPPLIER" in text.upper()
     assert "<5=546" not in text
+
+
+def test_outlines_under_a_line_that_became_text_leave_the_background(api, files):
+    import io
+
+    from PIL import Image
+    from test_pdf_to_pptx import pictures, slides_of
+    _, data = api.roundtrip(fx.garbled_text_pdf(files), "pptx")
+    prs = slides_of(data)
+    bg = Image.open(io.BytesIO(pictures(prs.slides[0])[0].image.blob)).convert("L")
+    s = bg.width / 1440
+    assert bg.crop((int(121 * s), int(63 * s), int(131 * s), int(75 * s))).getextrema()[0] > 200
