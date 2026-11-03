@@ -2,7 +2,8 @@
 
 A designed PDF (Canva, Keynote, PowerPoint export) keeps its exact look this
 way; the page text goes to the speaker notes so it can still be copied and
-searched, recognised by OCR when the page is a scan."""
+searched. Two tools, as for Word: "pptx" uses the PDF's own text only (fast),
+"pptx-ocr" also recognises the text of scanned pages."""
 import io
 
 import fixtures as fx
@@ -55,7 +56,22 @@ def test_portrait_pages_make_portrait_slides(api, files):
 
 
 @needs_tesseract
-def test_scanned_page_text_is_recognised_into_the_notes(api, files):
-    _, data = api.roundtrip(fx.scanned_page_pdf(files), "pptx")
+def test_with_ocr_scanned_page_text_is_recognised_into_the_notes(api, files):
+    body, data = api.roundtrip(fx.scanned_page_pdf(files), "pptx-ocr")
+    assert body["download_id"].endswith(".pptx")
+    assert body["ocr_mode"] == "tesseract"
     notes = slides_of(data).slides[0].notes_slide.notes_text_frame.text.upper()
     assert fx.OCR_WORD in notes
+
+
+def test_without_ocr_a_scan_gets_no_text_and_a_hint(api, files):
+    body, data = api.roundtrip(fx.scanned_page_pdf(files), "pptx")
+    assert body.get("ocr_mode") is None
+    assert slides_of(data).slides[0].notes_slide.notes_text_frame.text == ""
+    assert "with OCR" in body["warning"]
+
+
+def test_with_ocr_pages_that_have_text_keep_their_own_text(api, files):
+    body, data = api.roundtrip(canva_like_pdf(files), "pptx-ocr")
+    assert body.get("ocr_mode") is None          # nothing to recognise
+    assert "Lesson slide 1" in slides_of(data).slides[0].notes_slide.notes_text_frame.text

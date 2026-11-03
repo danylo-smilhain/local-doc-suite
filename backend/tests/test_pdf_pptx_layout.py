@@ -36,3 +36,16 @@ def test_other_page_size_is_centred_not_stretched(pp):
 def test_notes_text_drops_xml_invalid_characters(pp):
     assert pp.notes_text("  Title\x0cnext\x0bpage\x00 \n") == "Titlenextpage"
     assert pp.notes_text("Привіт\tсвіт\n") == "Привіт\tсвіт"
+
+
+def test_no_scans_or_recognised_scans_need_no_warning(pp):
+    assert pp.scan_warning(0, ocr=False, tesseract=False) is None
+    assert pp.scan_warning(3, ocr=True, tesseract=True) is None
+
+
+def test_scans_without_ocr_point_to_the_ocr_tool(pp):
+    assert "PDF to PPTX (with OCR)" in pp.scan_warning(2, ocr=False, tesseract=True)
+
+
+def test_ocr_without_tesseract_says_so(pp):
+    assert "Tesseract is not installed" in pp.scan_warning(2, ocr=True, tesseract=False)

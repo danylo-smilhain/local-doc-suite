@@ -5,7 +5,8 @@ Glossary
   without the dot. It is also the suffix of the stored upload
   (``storage/uploads/<file_id>.<ext>``).
 - target format (TargetFormat): what the client asks to produce. Usually
-  the output extension; ``docx-ocr`` is a variant of ``docx``.
+  the output extension; ``<ext>-ocr`` (``docx-ocr``, ``pptx-ocr``) is the
+  same file as ``<ext>`` made with OCR of scanned pages.
 - output extension: suffix of the produced file (``TargetFormat.out_ext``).
 - download id: basename of a produced file in ``storage/outputs``,
   ``converted_<file_id>.<ext>`` or ``merged_<uuid>.<ext>``.
@@ -61,6 +62,7 @@ class TargetFormat(str, Enum):
     MD = "md"
     DOCX = "docx"
     DOCX_OCR = "docx-ocr"
+    PPTX_OCR = "pptx-ocr"
     PDF = "pdf"
     EPUB = "epub"
     FB2 = "fb2"
@@ -73,7 +75,7 @@ class TargetFormat(str, Enum):
 
     @property
     def out_ext(self) -> str:
-        return "docx" if self is TargetFormat.DOCX_OCR else self.value
+        return self.value.removesuffix("-ocr")
 
 
 OUTPUT_EXTS = frozenset(t.out_ext for t in TargetFormat)

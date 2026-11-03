@@ -177,9 +177,13 @@ def _pdf_ocr_flow(job: Job) -> None:
 
 
 def pdf_pptx(job: Job) -> None:
-    for warning in pdf_to_pptx(job.in_path, job.out_path):
+    """Both "PDF to PPTX" tools: target "pptx-ocr" also OCRs scanned pages."""
+    warnings, ocr_ran = pdf_to_pptx(job.in_path, job.out_path, ocr=job.target == "pptx-ocr")
+    for warning in warnings:
         job.outcome.warn(warning)
     job.outcome.engine = "pymupdf"
+    if ocr_ran:
+        job.outcome.ocr_mode = "tesseract"
 
 
 def pdf_to_text(job: Job) -> None:

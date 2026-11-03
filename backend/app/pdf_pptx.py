@@ -70,19 +70,34 @@ def _ocr_scans(doc, scans: list[int], lang: str) -> dict[int, str]:
     return {i: samples[i] if i in samples else _ocr_png(_render_page_png(doc[i]), ordered) for i in scans}
 
 
-def pdf_to_pptx(in_path: str, out_path: str) -> list[str]:
-    """Writes the presentation; returns warnings for the user."""
-    import io
-
+def _tesseract_lang() -> str | None:
     import pytesseract
-
-    warnings: list[str] = []
     try:
         pytesseract.get_tesseract_version()
-        ocr_lang = available_ocr_lang()
+        return available_ocr_lang()
     except Exception:
         logger.debug("Tesseract unavailable for PDF -> PPTX notes", exc_info=True)
-        ocr_lang = None
+        return None
+
+
+def scan_warning(scans: int, ocr: bool, tesseract: bool) -> str | None:
+    """What to tell the user about scanned pages whose text is not in the notes."""
+    if not scans or (ocr and tesseract):
+        return None
+    if not ocr:
+        return (f"{scans} page(s) are scans without a text layer, so their notes are empty; "
+                "use PDF to PPTX (with OCR) to recognise their text.")
+    return (f"Tesseract is not installed: the text of {scans} scanned "
+            "page(s) was not recognised into the slide notes.")
+
+
+def pdf_to_pptx(in_path: str, out_path: str, ocr: bool) -> tuple[list[str], bool]:
+    """Writes the presentation. With ``ocr`` the text of scanned pages is
+    recognised; without it only the PDF's own text goes to the notes and
+    Tesseract never runs. Returns (warnings for the user, whether OCR ran)."""
+    import io
+
+    ocr_lang = _tesseract_lang() if ocr else None
     doc = fitz.open(in_path)
     try:
         first = doc[0].rect
@@ -98,10 +113,8 @@ def pdf_to_pptx(in_path: str, out_path: str) -> list[str]:
             text = notes_text(ocr_text.get(page.number, page.get_text()))
             if text:
                 slide.notes_slide.notes_text_frame.text = text
-        if scans and not ocr_lang:
-            warnings.append(f"Tesseract is not installed: the text of {len(scans)} scanned "
-                            "page(s) was not recognised into the slide notes.")
         prs.save(out_path)
     finally:
         doc.close()
-    return warnings
+    warning = scan_warning(len(scans), ocr, ocr_lang is not None)
+    return ([warning] if warning else []), bool(ocr_text)
