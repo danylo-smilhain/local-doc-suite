@@ -177,7 +177,7 @@ def _ocr_page(page, lang: str, scan: bool) -> PageContent:
     if not scan and page.get_images(full=True):
         drawn = without_pictures(page, dpi)
         words = [w for w in words if has_letters(drawn, w[:4])]
-    runs = (_ocr_line_run(line, 72.0 / dpi) for line in lines_of(words))
+    runs = (_ocr_line_run(line, 72.0 / dpi) for line in lines_of(words, np.asarray(full_img)))
     segments = [{"runs": [run]} for run in runs if run]
     if not ocr_found_text(segments):
         return PageContent(full_img, [], False, False)

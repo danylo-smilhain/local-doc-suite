@@ -14,13 +14,15 @@ Where passes read the same place, the surer reading wins. Lines are
 then built from where the words are, not from either pass's layout.
 
 Glossary: a word is one Tesseract word with its box in pixels; a line is the
-words on one baseline with no column gap between them.
+words on one baseline with no column gap and no drawn line (a wall: a
+table's or a block's edge) between them.
 """
 import statistics
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 from typing import NamedTuple
 
+import numpy as np
 import pytesseract
 from PIL import Image, ImageChops
 
@@ -42,6 +44,15 @@ SAME_PLACE = 0.5
 # reading narrower than that for its letters is a thin stroke (a frame edge,
 # a rule) that Tesseract took for "ся" or "|".
 MIN_LETTER_WIDTH = 0.15
+# A table's or a block's edge drawn between two words: a column of the gap
+# between them where this share of the line's height differs by more than
+# WALL_CONTRAST (0-255) from the gap's own colour. A cell's text that ends a
+# few points before the next cell's begins (closer than a column gap) is two
+# lines, not one ("Незручність і витрати Цифрові необанки").
+WALL_SHARE = 0.8
+WALL_CONTRAST = 60
+# Tesseract reads a vertical line next to a word as "|" ("|відділень").
+RULE = "|"
 
 
 class Word(NamedTuple):
@@ -76,8 +87,24 @@ def read_words(img: Image.Image, lang: str) -> list[Word]:
         l, t, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
         text = (text or "").strip()
         if text and conf >= MIN_CONF and w >= MIN_LETTER_WIDTH * h * len(text):
-            words.append(Word(l, t, l + w, t + h, text, conf))
+            word = without_rules(Word(l, t, l + w, t + h, text, conf))
+            if word is not None:
+                words.append(word)
     return words
+
+
+def without_rules(word: Word) -> Word | None:
+    """A word without the "|" a drawn line next to it was read as; its box
+    loses the same share of its width. None: the word was only a line."""
+    text = word.text.strip(RULE)
+    if not text:
+        return None
+    if text == word.text:
+        return word
+    per = (word.x1 - word.x0) / len(word.text)
+    lead = len(word.text) - len(word.text.lstrip(RULE))
+    trail = len(word.text) - len(word.text.rstrip(RULE))
+    return word._replace(x0=word.x0 + lead * per, x1=word.x1 - trail * per, text=text)
 
 
 def _shared(a: Word, b: Word) -> float:
@@ -105,20 +132,37 @@ def read_slide_words(img: Image.Image, lang: str) -> list[Word]:
         return best_words(*pool.map(lambda p: read_words(*p), passes))
 
 
-def _same_line(last: Word, word: Word) -> bool:
+def walled(picture: np.ndarray, last: Word, word: Word) -> bool:
+    """Whether a line is drawn between two words of one baseline (picture:
+    the slide as an RGB array): a column of the gap between them, over the
+    height both words share, that stands out from the gap's colour."""
+    x0, x1 = int(np.ceil(last.x1)), int(word.x0)
+    y0, y1 = int(max(last.y0, word.y0)), int(np.ceil(min(last.y1, word.y1)))
+    gap = picture[y0:y1, x0:x1].astype(int)
+    if gap.size == 0:
+        return False
+    colour = np.median(gap.reshape(-1, gap.shape[-1]), axis=0)
+    differs = np.abs(gap - colour).max(axis=2) > WALL_CONTRAST
+    return bool((differs.mean(axis=0) >= WALL_SHARE).any())
+
+
+def _same_line(last: Word, word: Word, picture: np.ndarray | None) -> bool:
     h_last, h_word = last.y1 - last.y0, word.y1 - word.y0
     overlap = min(last.y1, word.y1) - max(last.y0, word.y0)
     gap = word.x0 - last.x1
     # word box height ~ 0.72 of the font size (as in pdf_layout._ocr_line_run)
     size = max(h_last, h_word) / 0.72
-    return overlap >= 0.5 * min(h_last, h_word) and -0.5 * size <= gap <= COLUMN_GAP_EM * size
+    return (overlap >= 0.5 * min(h_last, h_word) and -0.5 * size <= gap <= COLUMN_GAP_EM * size
+            and (picture is None or not walled(picture, last, word)))
 
 
-def lines_of(words: list[Word]) -> list[list[Word]]:
-    """Words grouped into lines, each left to right, lines top to bottom."""
+def lines_of(words: list[Word], picture: np.ndarray | None = None) -> list[list[Word]]:
+    """Words grouped into lines, each left to right, lines top to bottom.
+    With the slide's picture (RGB array) a line also ends at a line drawn
+    between two words (see walled)."""
     lines: list[list[Word]] = []
     for word in sorted(words, key=lambda w: (w.x0, w.y0)):
-        line = next((ln for ln in lines if _same_line(ln[-1], word)), None)
+        line = next((ln for ln in lines if _same_line(ln[-1], word, picture)), None)
         if line is None:
             lines.append([word])
         else:

@@ -394,6 +394,89 @@ def canva_lesson_pdf(directory: Path, name: str = "lesson.pdf") -> Path:
     return path
 
 
+DEJAVU_SERIF = "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
+DEJAVU_SERIF_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
+# Slide 1 of notebook_slides_pdf, in points of its 1376 x 768 pages
+NOTE_TITLE = "Розробка бізнес-моделі"            # bold serif, red
+NOTE_LOGO = (40, 30, 130, 120)                  # four black diamonds
+NOTE_ICON = (1230, 40, 1320, 130)               # a target: three rings
+NOTE_RULE = (40, 220, 900, 224)                 # a thin red line under the title
+NOTE_BOX = (700, 590, 1320, 720)                # an orange box with regular serif text
+NOTE_BOX_TEXT = "Підготував студент групи"
+NOTE_TABLE = (40, 290, 1320, 530)               # three columns, a header row
+NOTE_COLUMNS = (40, 470, 900, 1320)             # x of the table's vertical lines
+NOTE_HEADER = ["Проблема клієнта", "Альтернативи", "Недоліки"]           # bold serif
+NOTE_CELLS = ["Незручність і витрати", "Цифрові необанки", "Обмежена мережа"]  # regular serif
+# Slide 2: the same in a sans font
+NOTE_SANS_TITLE = "Схема бізнес-моделі"           # bold sans
+NOTE_SANS_BODY = "Цифрова молодь та фахівці"      # regular sans
+NOTE_ARROW = (600, 400, 680, 520)                # a red chevron
+
+
+def notebook_slides_pdf(directory: Path, name: str = "notebook.pdf") -> Path:
+    """Two 16:9 slides that are only pictures, as NotebookLM / Gemini export
+    them: a white page, nothing like Canva's colours or fonts.
+    1. A serif deck: a logo of diamonds, a bold red title over a thin rule, a
+       target icon, a table with vertical lines whose cells' text comes
+       within a few points of the next cell's, an orange box with text.
+    2. A sans deck: a bold title, regular text, a red chevron."""
+    import fitz
+    from PIL import Image, ImageDraw, ImageFont
+    k = 2                                       # pixels per point
+    doc = fitz.open()
+
+    def font(path, pt):
+        return ImageFont.truetype(path, pt * k)
+
+    def put(img):
+        page = doc.new_page(width=1376, height=768)
+        page.insert_image(page.rect, stream=_png(img))
+
+    img = Image.new("RGB", (1376 * k, 768 * k), "white")
+    d = ImageDraw.Draw(img)
+    x0, y0, x1, y1 = NOTE_LOGO
+    half = (x1 - x0) / 4
+    for cx, cy in ((x0 + half, y0 + half), (x1 - half, y0 + half), (x0 + half, y1 - half), (x1 - half, y1 - half)):
+        d.polygon([(k * (cx - half), k * cy), (k * cx, k * (cy - half)), (k * (cx + half), k * cy),
+                   (k * cx, k * (cy + half))], fill="black")
+    d.text((k * 40, k * 140), NOTE_TITLE, font=font(DEJAVU_SERIF_BOLD, 44), fill=(170, 11, 10))
+    d.rectangle([k * v for v in NOTE_RULE], fill=(170, 11, 10))
+    x0, y0, x1, y1 = NOTE_ICON
+    for n, r in enumerate((45, 30, 15)):
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        d.ellipse([k * (cx - r), k * (cy - r), k * (cx + r), k * (cy + r)],
+                  fill=(170, 11, 10) if n % 2 == 0 else "white")
+    x0, y0, x1, y1 = NOTE_TABLE
+    d.rectangle([k * x0, k * y0, k * x1, k * y1], outline="black", width=2 * k)
+    d.rectangle([k * x0, k * 370, k * x1, k * 372], fill="black")
+    for x in NOTE_COLUMNS[1:-1]:
+        d.rectangle([k * x, k * y0, k * (x + 2), k * y1], fill="black")
+    for n, (head, cell) in enumerate(zip(NOTE_HEADER, NOTE_CELLS)):
+        d.text((k * (NOTE_COLUMNS[n] + 10), k * 315), head, font=font(DEJAVU_SERIF_BOLD, 26), fill="black")
+        body = font(DEJAVU_SERIF, 26)
+        x = NOTE_COLUMNS[n] + 10
+        if n == 0:          # the first cell's text ends 8 pt before the line
+            x = NOTE_COLUMNS[1] - 8 - d.textlength(cell, font=body) / k
+        d.text((k * x, k * 420), cell, font=body, fill="black")
+    d.rectangle([k * v for v in NOTE_BOX], fill=(250, 220, 195))
+    d.text((k * (NOTE_BOX[0] + 30), k * (NOTE_BOX[1] + 45)), NOTE_BOX_TEXT, font=font(DEJAVU_SERIF, 26), fill="black")
+    put(img)
+
+    img = Image.new("RGB", (1376 * k, 768 * k), "white")
+    d = ImageDraw.Draw(img)
+    d.text((k * 40, k * 60), NOTE_SANS_TITLE, font=font(DEJAVU_BOLD, 44), fill="black")
+    d.text((k * 40, k * 220), NOTE_SANS_BODY, font=font(DEJAVU, 28), fill="black")
+    x0, y0, x1, y1 = NOTE_ARROW
+    d.polygon([(k * x0, k * y0), (k * (x0 + 30), k * y0), (k * x1, k * (y0 + y1) / 2),
+               (k * (x0 + 30), k * y1), (k * x0, k * y1), (k * (x1 - 30), k * (y0 + y1) / 2)], fill=(200, 16, 46))
+    put(img)
+
+    path = directory / name
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
 def background_pdf(directory: Path, name: str = "background.pdf") -> Path:
     """A page covered by a picture with a line of real text on top."""
     import fitz

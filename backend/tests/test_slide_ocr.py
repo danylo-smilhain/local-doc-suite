@@ -76,3 +76,67 @@ def test_a_reading_too_narrow_for_its_letters_is_a_stroke_not_a_word(so, monkeyp
             "left": [0, 50, 100], "top": [0, 0, 0], "width": [2, 9, 40], "height": [30, 30, 30]}
     monkeypatch.setattr(so.pytesseract, "image_to_data", lambda *a, **k: data)
     assert [w.text for w in so.read_words(None, "ukr")] == ["і", "on"]
+
+
+def _picture(width=200, height=40, fill=(255, 255, 255)):
+    import numpy as np
+    a = np.zeros((height, width, 3), np.uint8)
+    a[:] = fill
+    return a
+
+
+def test_a_line_drawn_between_two_words_ends_the_line(so):
+    W = so.Word
+    left, right = W(10, 5, 90, 35, "витрати", 96), W(110, 5, 190, 35, "Цифрові", 96)
+    picture = _picture()
+    assert [[w.text for w in ln] for ln in so.lines_of([left, right], picture)] == [["витрати", "Цифрові"]]
+    picture[:, 99:101] = 0                          # a table's column line, 2 px
+    assert [[w.text for w in ln] for ln in so.lines_of([left, right], picture)] == [["витрати"], ["Цифрові"]]
+
+
+def test_words_on_a_coloured_block_stay_one_line(so):
+    """The gap's own colour is the block's: only what stands out of it is a line."""
+    W = so.Word
+    picture = _picture(fill=(250, 220, 195))
+    picture[:, 99:101] = (240, 210, 185)            # a faint shade is no line
+    words = [W(10, 5, 90, 35, "Мета", 96), W(110, 5, 190, 35, "аналізу", 96)]
+    assert [[w.text for w in ln] for ln in so.lines_of(words, picture)] == [["Мета", "аналізу"]]
+
+
+def test_a_short_mark_in_the_gap_is_no_line(so):
+    """A line runs the whole height the words share; a hyphen or a dot does not."""
+    W = so.Word
+    picture = _picture()
+    picture[25:30, 99:101] = 0
+    words = [W(10, 5, 90, 35, "до", 96), W(110, 5, 190, 35, "20%", 96)]
+    assert len(so.lines_of(words, picture)) == 1
+
+
+def test_a_line_read_as_a_bar_is_taken_off_the_word(so):
+    W = so.Word
+    assert so.without_rules(W(100, 0, 200, 30, "|відділень", 90)) == W(110, 0, 200, 30, "відділень", 90)
+    cut = so.without_rules(W(100, 0, 200, 30, "банку||", 90))
+    assert cut.text == "банку" and cut.x0 == 100 and abs(cut.x1 - (100 + 100 * 5 / 7)) < 1e-9
+    assert so.without_rules(W(0, 0, 9, 30, "||", 90)) is None
+    word = W(0, 0, 90, 30, "a|b", 90)
+    assert so.without_rules(word) is word
+
+
+def test_a_bar_alone_is_dropped_and_a_bar_beside_a_word_cut_off(so, monkeypatch):
+    data = {"text": ["|", "|Цифрові"], "conf": ["92", "92"],
+            "left": [0, 100], "top": [0, 0], "width": [12, 160], "height": [30, 30]}
+    monkeypatch.setattr(so.pytesseract, "image_to_data", lambda *a, **k: data)
+    assert [(w.text, w.x0) for w in so.read_words(None, "ukr")] == [("Цифрові", 120)]
+
+
+def test_words_whose_boxes_touch_stay_one_line(so):
+    """No gap at all between two words (Tesseract's boxes overlap): nothing
+    can be drawn between them."""
+    import warnings
+    W = so.Word
+    picture = _picture()
+    picture[:, 95:100] = 0
+    words = [W(10, 5, 100, 35, "PR-", 96), W(98, 5, 190, 35, "захід", 96)]
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert len(so.lines_of(words, picture)) == 1
