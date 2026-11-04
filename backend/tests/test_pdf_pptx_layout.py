@@ -216,9 +216,9 @@ def test_a_short_word_goes_with_the_word_after_it(pp):
     """"з хештегом", "Чи відповідає": a short word belongs to what follows;
     at the end of a line to what came before."""
     from app.slide_fonts import line_bolds
-    assert line_bolds([1.0, None, -0.3], "sans", False) == [True, False, False]
-    assert line_bolds([None, 1.0, None], "sans", False) == [True, True, True]
-    assert line_bolds([None, None], "sans", True) == [True, True]
+    assert line_bolds([1.0, None, -0.3], "sans", False, ["хештегом", "з", "контентом"]) == [True, False, False]
+    assert line_bolds([None, 1.0, None], "sans", False, ["з", "хештегом", "і"]) == [True, True, True]
+    assert line_bolds([None, None], "sans", True, ["PR", "і"]) == [True, True]
 
 
 

@@ -211,7 +211,7 @@ def drawn_mark(picture: np.ndarray, word: Word) -> bool:
     w, h = word.x1 - word.x0, word.y1 - word.y0
     if not h or not BULLET_SQUARE[0] <= w / h <= BULLET_SQUARE[1]:
         return False
-    x0, y0, x1, y1 = (int(round(v)) for v in (word.x0, word.y0, word.x1, word.y1))
+    x0, y0, x1, y1 = (round(v) for v in (word.x0, word.y0, word.x1, word.y1))
     ring = np.concatenate([picture[max(0, y0 - 2):y0, x0:x1].reshape(-1, 3),
                            picture[y1:y1 + 2, x0:x1].reshape(-1, 3)])
     if not len(ring):

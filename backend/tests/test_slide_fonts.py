@@ -42,8 +42,9 @@ def word(sf, text, path, px):
 def test_the_family_of_a_line_is_seen_in_its_strokes(sf, fam, bold, px):
     for path in FONTS[fam, bold]:
         for line in LINES:
-            masks = [word(sf, w, path, px) for w in line.split() if len(w) >= 3]
-            assert sf.family(masks, px) == fam, (path, line)
+            texts = [w for w in line.split() if len(w) >= 3]
+            masks = [word(sf, w, path, px) for w in texts]
+            assert sf.family(masks, px, texts) == fam, (path, line)
 
 
 def test_small_letters_say_nothing_and_stay_sans(sf):
@@ -217,18 +218,29 @@ def test_a_digit_is_weighed_by_its_whole_height(sf, bold):
 def test_a_short_word_goes_with_its_nearest_measured_neighbour(sf):
     """"@Top Blogers UA – канал": "UA" is next to "Blogers", "канал" is two
     words away; "–" is nearer "канал"."""
-    assert sf.line_bolds([1.19, 0.83, None, None, -0.54], "sans", False) == [True, True, True, False, False]
+    line = ["@Top", "Blogers", "UA", "–", "канал"]
+    assert sf.line_bolds([1.19, 0.83, None, None, -0.54], "sans", False, line) == [True, True, True, False, False]
     # on a tie, the word after it ("з хештегом"), unless it closes a phrase
-    assert sf.line_bolds([-0.5, None, 1.0], "sans", False) == [False, True, True]
-    assert sf.line_bolds([-0.5, None, 1.0], "sans", False, [False, True, False]) == [False, False, True]
+    assert sf.line_bolds([-0.5, None, 1.0], "sans", False, ["контент", "з", "хештегом"]) == [False, True, True]
+    assert sf.line_bolds([-0.5, None, 1.0], "sans", False, ["очах", "ЦА,", "brand"]) == [False, False, True]
+
+
+def test_a_dash_or_a_word_after_a_comma_starts_what_follows(sf):
+    """"CPA – це вартість": the dash goes with "це", not "CPA"; "Даруйте
+    емоції, а не покупку": "а" after the comma goes with "не покупку"."""
+    assert sf.line_bolds([1.0, None, None, -0.4], "sans", False, ["CPA", "–", "це", "вартість"]) == [
+        True, False, False, False]
+    assert sf.line_bolds([1.0, 1.0, None, None, -0.3], "sans", False, ["Даруйте", "емоції,", "а", "не", "покупку."]) == [
+        True, True, False, False, False]
 
 
 def test_a_word_near_the_threshold_goes_with_its_line(sf):
     """Measured on a Gemini slide (serif, bold from 0.67): "Схема" (0.59) in
     a bold title, "Віртуальна" (0.64) in a regular line."""
-    assert sf.line_bolds([0.59, 0.9, 0.85, 0.95], "serif", False) == [True] * 4
-    assert sf.line_bolds([0.64, 0.3, 0.2, 0.1], "serif", False) == [False] * 4
-    assert sf.line_bolds([0.64], "serif", False) == [False]          # alone: the threshold decides
+    words = ["Схема", "бізнес-моделі", "Lean", "Canvas:"]
+    assert sf.line_bolds([0.59, 0.9, 0.85, 0.95], "serif", False, words) == [True] * 4
+    assert sf.line_bolds([0.64, 0.3, 0.2, 0.1], "serif", False, words) == [False] * 4
+    assert sf.line_bolds([0.64], "serif", False, ["Віртуальна"]) == [False]     # alone: the threshold decides
 
 
 ITALICS = {False: [DV + "DejaVuSans.ttf", DV + "DejaVuSerif.ttf", LIB + "LiberationSerif-Regular.ttf",
@@ -242,9 +254,30 @@ ITALICS = {False: [DV + "DejaVuSans.ttf", DV + "DejaVuSerif.ttf", LIB + "Liberat
 def test_italic_is_seen_in_the_slant_of_the_strokes(sf, italic, px):
     """Upright fonts measure -0.03 to 0.02, italic and oblique 0.16 to 0.20."""
     for path in ITALICS[italic]:
-        masks = [word(sf, w, path, px) for w in "Саме на цій групі перевіряються гіпотези".split() if len(w) >= 3]
+        masks = [word(sf, w, path, px) for w in ("Саме", "цій", "групі", "перевіряються", "гіпотези")]
         assert sf.italic(masks) == italic, path
 
 
 def test_no_words_are_not_italic(sf):
     assert not sf.italic([])
+
+
+def squeezed(sf, text, path, px, k):
+    """A word drawn narrower, as a condensed font is: its uprights thinner,
+    its bars as thick."""
+    m = word(sf, text, path, px)
+    img = Image.fromarray(m.astype(np.uint8) * 255).resize((max(1, round(m.shape[1] * k)), m.shape[0]), Image.LANCZOS)
+    return np.asarray(img) > 127
+
+
+@pytest.mark.parametrize("fam", ["serif", "sans"])
+@pytest.mark.parametrize("k", [0.7, 0.8])
+def test_a_condensed_font_keeps_its_family(sf, fam, k):
+    """A narrow serif (Lean Canvas, slide 10: 0.78 of Helvetica's width)
+    has thinner uprights, so its stroke contrast looks like a sans's (1.25-1.4);
+    over its width it is a serif's again. A narrow sans stays sans."""
+    path = FONTS[fam, False][0]
+    for line in LINES:
+        masks = [squeezed(sf, w, path, 66, k) for w in line.split() if len(w) >= 3]
+        texts = [w for w in line.split() if len(w) >= 3]
+        assert sf.family(masks, 66, texts) == fam, (line, k)

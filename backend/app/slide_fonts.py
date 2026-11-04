@@ -11,6 +11,10 @@ Glossary (all on a word's ink, the pixels of its letters):
 - contrast: stem over bar. A sans font draws both alike (0.9-1.55 measured,
   bold ones included); a serif font makes the uprights thicker (1.76 and up
   in DejaVu Serif, Liberation Serif and Gemini's serif, regular);
+- narrowness: a word's width over its text drawn in Helvetica at the same
+  height; a condensed font's uprights are thinner by as much while its bars
+  are not, so its contrast is taken over its narrowness (a narrow serif on
+  Lean Canvas: 0.78 wide, contrast 1.25-1.4, over its width 1.6-1.8);
 - feet: the runs along the top and the bottom of the letters' main body
   over the stem; serifs make them longer (1.7 and up) than the uprights;
 - the body: the rows of the letters' main body (with at least half the
@@ -34,7 +38,9 @@ Glossary (all on a word's ink, the pixels of its letters):
 - a line's weights: a word within UNSURE of its threshold ("Схема", 0.59
   in a bold title) takes the weight most of its line's other words have;
   a word not measured (too short: "UA", "і", "–") that of its nearest
-  measured neighbour, the one after it on a tie unless it closes a phrase.
+  measured neighbour, the one after it on a tie; one that closes a phrase
+  ("очах ЦА,") goes with what came before it, a dash or a word after a
+  phrase's end ("CPA – це", "емоції, а не") with what follows.
 """
 import fitz
 import numpy as np
@@ -153,16 +159,25 @@ def weight(mask: np.ndarray, whole: bool = False) -> float:
     return commonest(runs(mask)) / body_height(mask, whole) if mask.any() else 0.0
 
 
-def family(masks: list[np.ndarray], size_px: float) -> str:
-    """"serif" or "sans" for a line, from the ink of its words (see the
-    glossary); too small to tell, or nothing to go by: "sans"."""
+def narrowness(mask: np.ndarray, text: str) -> float:
+    """A word's width over its text drawn in Helvetica at its height, at
+    most 1 (a wide font's contrast is not raised)."""
+    drawn_text = drawn(text, "sans", False, body_height(mask))
+    return min(1.0, mask.shape[1] / drawn_text.shape[1]) if drawn_text.size else 1.0
+
+
+def family(masks: list[np.ndarray], size_px: float, texts: list[str] | None = None) -> str:
+    """"serif" or "sans" for a line, from the ink of its words and, given
+    their texts, how narrow they are (see the glossary); too small to tell,
+    or nothing to go by: "sans"."""
     if size_px < MIN_FAMILY_PX or not masks:
         return "sans"
-    measured = [m for m in masks if contrast(m) >= MIN_CONTRAST]
+    texts = texts or [None] * len(masks)
+    measured = [(m, t) for m, t in zip(masks, texts) if contrast(m) >= MIN_CONTRAST]
     if not measured:
         return "sans"
-    c = float(np.median([contrast(m) for m in measured]))
-    f = float(np.median([feet(m) for m in measured]))
+    c = float(np.median([contrast(m) / (narrowness(m, t) if t else 1.0) for m, t in measured]))
+    f = float(np.median([feet(m) for m, _ in measured]))
     serif = c >= SERIF_CONTRAST or (c >= FOOTED_CONTRAST and f >= SERIF_FEET)
     return "serif" if serif else "sans"
 
@@ -241,23 +256,33 @@ def is_bold(mask: np.ndarray, text: str, fam: str) -> bool:
     return bool(bold_of(relative_weight(mask, text, fam), fam))
 
 
-def line_bolds(values: list[float | None], fam: str, default: bool,
-               closing: list[bool] | None = None) -> list[bool]:
-    """Bold or not for each word of a line from its boldness (None: not
-    measured); see "a line's weights" in the glossary. closing: the words
-    that end a phrase; default: the line's weight when nothing is measured."""
+# What ends in one of these ends a phrase (see "a line's weights").
+CLOSING = ",.:;!?)»"
+
+
+def line_bolds(values: list[float | None], fam: str, default: bool, texts: list[str]) -> list[bool]:
+    """Bold or not for each word of a line (texts) from its boldness (None:
+    not measured); see "a line's weights" in the glossary. default: the
+    line's weight when nothing is measured."""
     line = BOLD_FROM[fam]
     sure = [v >= line for v in values if v is not None and abs(v - line) >= UNSURE]
     most = sum(sure) * 2 > len(sure) if sum(sure) * 2 != len(sure) else None
     decided = [None if v is None else (most if abs(v - line) < UNSURE and most is not None else v >= line)
                for v in values]
-    closing = closing or [False] * len(values)
+    closes = [t.rstrip()[-1:] in CLOSING for t in texts]
     out = []
     for n, d in enumerate(decided):
         if d is None:
-            near = [(abs(m - n), m < n if not closing[n] else m > n, decided[m])
-                    for m in range(len(decided)) if decided[m] is not None]
-            d = min(near)[2] if near else default
+            before = [m for m in range(n) if decided[m] is not None]
+            after = [m for m in range(n + 1, len(decided)) if decided[m] is not None]
+            starts = not any(c.isalnum() for c in texts[n]) or (n > 0 and closes[n - 1])
+            if starts and after:
+                d = decided[after[0]]
+            elif closes[n] and before:
+                d = decided[before[-1]]
+            else:
+                near = [(m - n, decided[m]) for m in after[:1]] + [(n - m, decided[m]) for m in before[-1:]]
+                d = min(near, key=lambda pair: pair[0])[1] if near else default
         out.append(d)
     return out
 

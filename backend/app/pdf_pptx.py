@@ -86,9 +86,7 @@ MIN_WEIGH_PX = 20
 # A word of fewer letters or digits than this is too little ink to weigh
 # ("і" came out bold, so did "Це", "не", "1M"); it goes with its neighbours
 # (slide_fonts.line_bolds), unless its line has nothing longer ("PR" alone).
-# What ends in one of CLOSING ends a phrase: it goes with what came before.
 MIN_WEIGHED_CHARS = 3
-CLOSING = ",.:;!?)»"
 # An OCR line with at least this many letters takes its size from its width.
 LINE_SIZE_MIN_LETTERS = 4
 # A recognised word is painted out of the slide picture this many times its
@@ -288,9 +286,10 @@ def style_ocr_segments(segments: list[dict], scale_pt: float, img: Image.Image,
             words = [(r["text"][start:end], letters(picture, r, x0, x1, k, rows))
                      for (x0, x1, start, end), rows in zip(_word_spans(r), _word_rows(r))]
             # capitals do not tell serif from sans: a line of them stays sans
-            voters = [m for text, m in words if sum(c.isalpha() for c in text) >= MIN_VOTE_LETTERS
-                      and not no_x_height(text)] or [m for text, m in words if not no_x_height(text)]
-            r["fam"] = family([m for m in voters if m.any()], r["size"] * k)
+            voters = [(text, m) for text, m in words if sum(c.isalpha() for c in text) >= MIN_VOTE_LETTERS
+                      and not no_x_height(text)] or [(text, m) for text, m in words if not no_x_height(text)]
+            voters = [(text, m) for text, m in voters if m.any()]
+            r["fam"] = family([m for _, m in voters], r["size"] * k, [text for text, _ in voters])
             r["font"] = font_name(r["fam"])
             r["italic"] = italic(slanted([m for _, m in words], [t for t, _ in words]))
             crop = tuple(round(v) for v in box)
@@ -387,8 +386,8 @@ def weigh_page(runs: list[dict], img: Image.Image, k: float) -> list[list[dict]]
 
 def _split_by_weight(run: dict, spans: list, values: list[float | None]) -> list[dict]:
     groups: list[list] = []
-    closing = [run["text"][start:end].rstrip()[-1:] in CLOSING for _, _, start, end in spans]
-    for (x0, x1, start, _), bold in zip(spans, line_bolds(values, run["fam"], run.get("bold", False), closing)):
+    texts = [run["text"][start:end] for _, _, start, end in spans]
+    for (x0, x1, start, _), bold in zip(spans, line_bolds(values, run["fam"], run.get("bold", False), texts)):
         if groups and groups[-1][3] == bold:
             groups[-1][1] = x1
         else:
