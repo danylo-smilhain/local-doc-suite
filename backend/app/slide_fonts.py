@@ -16,10 +16,10 @@ Glossary (all on a word's ink, the pixels of its letters):
 - the body: the rows of the letters' main body (with at least half the
   fullest row's ink: the x-height), without capitals, ascenders and
   descenders, which a line's crop may cut;
-- weight: the stem over the body's height; for a word of capitals only,
-  which has no x-height (its fullest rows are the bars of Е, Н, Ф), over
-  the height of its uprights: the rows with a third of a typical row's ink,
-  without the dots of Ї or the tail of Ц;
+- weight: the stem over the body's height; for a word of capitals or
+  digits, which has no x-height (its fullest rows are the bars of Е, Н, Ф
+  or of 7), over the height of its uprights: the rows with a third of a
+  typical row's ink, without the dots of Ї or the tail of Ц;
 - boldness: where a word's weight lies between its own text drawn regular
   (0) and drawn bold (1) in its family (Helvetica or Times), on a log
   scale: bold weighs 1.2 to 2.3 times regular depending on the letters;
@@ -27,7 +27,11 @@ Glossary (all on a word's ink, the pixels of its letters):
   a typical sans regular; DejaVu and Liberation regular reach 0.15, Canva's
   regular -0.15, its semibold starts at 0.44); a serif word two thirds of
   the way (0.67: Times regular is lighter than most serifs', Gemini's
-  regular reaches 0.64 ("Віртуальна"), its bold starts at 0.70 ("засади")).
+  regular reaches 0.64 ("Віртуальна"), its bold starts at 0.70 ("засади"));
+- a line's weights: a word within UNSURE of its threshold ("Схема", 0.59
+  in a bold title) takes the weight most of its line's other words have;
+  a word not measured (too short: "UA", "і", "–") that of its nearest
+  measured neighbour, the one after it on a tie unless it closes a phrase.
 """
 import fitz
 import numpy as np
@@ -60,6 +64,8 @@ MIN_BOLD_GAIN = 1.15
 # Deciding per page instead (splitting its words into two weights) split
 # pages of one weight: 19 of 28 regular words of a Gemini slide came out bold.
 BOLD_FROM = {"sans": 0.3, "serif": 0.67}
+# A word this near its family's threshold is decided by its line.
+UNSURE = 0.1
 # A contrast below this is a stroke mis-measured (a bar three times a stem):
 # that word has no vote on its family.
 MIN_CONTRAST = 0.8
@@ -120,11 +126,10 @@ def feet(mask: np.ndarray) -> float:
     return float(np.median(lengths)) / stem if len(lengths) else 0.0
 
 
-def capitals(text: str) -> bool:
-    """Whether a word's letters are all capitals: it has no x-height, and its
+def no_x_height(text: str) -> bool:
+    """Whether a word is all capitals or digits: it has no x-height, and its
     strokes do not tell serif from sans (a sans "КОНФЕРЕНЦІЇ": contrast 2.5)."""
-    letters = [c for c in text if c.isalpha()]
-    return bool(letters) and all(c.isupper() for c in letters)
+    return any(c.isalnum() for c in text) and not any(c.islower() for c in text)
 
 
 def body_height(mask: np.ndarray, whole: bool = False) -> int:
@@ -179,7 +184,7 @@ def drawn(text: str, fam: str, bold: bool, height: int, whole: bool = False) -> 
 def relative_weight(mask: np.ndarray, text: str, fam: str) -> tuple[float, float] | None:
     """(the word's weight, the weight of its text drawn bold), both over the
     weight of its text drawn regular in its family; None: nothing to measure."""
-    whole = capitals(text)
+    whole = no_x_height(text)
     own = weight(mask, whole)
     if not own or not text.strip():
         return None
@@ -209,6 +214,27 @@ def bold_of(measure: tuple[float, float] | None, fam: str) -> bool | None:
 
 def is_bold(mask: np.ndarray, text: str, fam: str) -> bool:
     return bool(bold_of(relative_weight(mask, text, fam), fam))
+
+
+def line_bolds(values: list[float | None], fam: str, default: bool,
+               closing: list[bool] | None = None) -> list[bool]:
+    """Bold or not for each word of a line from its boldness (None: not
+    measured); see "a line's weights" in the glossary. closing: the words
+    that end a phrase; default: the line's weight when nothing is measured."""
+    line = BOLD_FROM[fam]
+    sure = [v >= line for v in values if v is not None and abs(v - line) >= UNSURE]
+    most = sum(sure) * 2 > len(sure) if sum(sure) * 2 != len(sure) else None
+    decided = [None if v is None else (most if abs(v - line) < UNSURE and most is not None else v >= line)
+               for v in values]
+    closing = closing or [False] * len(values)
+    out = []
+    for n, d in enumerate(decided):
+        if d is None:
+            near = [(abs(m - n), m < n if not closing[n] else m > n, decided[m])
+                    for m in range(len(decided)) if decided[m] is not None]
+            d = min(near)[2] if near else default
+        out.append(d)
+    return out
 
 
 def font_name(fam: str) -> str:

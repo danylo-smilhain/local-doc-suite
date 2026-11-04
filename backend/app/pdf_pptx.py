@@ -38,7 +38,7 @@ from app.pdf_layout import (LAYOUT_BG_DPI, LAYOUT_GFX_CLUSTER_GAP_PT, LAYOUT_MIN
                             _rotated_text_rects, _text_decorations, _vector_table_primitives, _xy_cut)
 from app.pdf_text import repair_pdf_tounicode
 from app.slide_ocr import lines_of, read_slide_words
-from app.slide_fonts import MIN_VOTE_LETTERS, bold_of, capitals, family, font_name, ink, relative_weight
+from app.slide_fonts import MIN_VOTE_LETTERS, boldness, family, font_name, ink, line_bolds, no_x_height, relative_weight
 from app.slide_raster import split_picture
 
 logger = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ LETTER_SHARE = 0.05
 MIN_WEIGH_PX = 20
 # A word of fewer letters or digits than this is too little ink to weigh
 # ("і" came out bold, so did "Це", "не", "1M"); it goes with its neighbours
-# (short_words_follow), unless its line has nothing longer ("PR" alone).
+# (slide_fonts.line_bolds), unless its line has nothing longer ("PR" alone).
 # What ends in one of CLOSING ends a phrase: it goes with what came before.
 MIN_WEIGHED_CHARS = 3
 CLOSING = ",.:;!?)»"
@@ -288,7 +288,7 @@ def style_ocr_segments(segments: list[dict], scale_pt: float, img: Image.Image,
                      for (x0, x1, start, end), rows in zip(_word_spans(r), _word_rows(r))]
             # capitals do not tell serif from sans: a line of them stays sans
             voters = [m for text, m in words if sum(c.isalpha() for c in text) >= MIN_VOTE_LETTERS
-                      and not capitals(text)] or [m for text, m in words if not capitals(text)]
+                      and not no_x_height(text)] or [m for text, m in words if not no_x_height(text)]
             r["fam"] = family([m for m in voters if m.any()], r["size"] * k)
             r["font"] = font_name(r["fam"])
             crop = tuple(round(v) for v in box)
@@ -371,14 +371,14 @@ def weigh_page(runs: list[dict], img: Image.Image, k: float) -> list[list[dict]]
         measured.append([relative_weight(letters(picture, r, x0, x1, k, rows), r["text"][start:end], r["fam"])
                          if is_long or not any(long) else None
                          for (x0, x1, start, end), rows, is_long in zip(sp, _word_rows(r), long)])
-    return [_split_by_weight(r, sp, [bold_of(m, r["fam"]) for m in line]) if sp else [r]
+    return [_split_by_weight(r, sp, [boldness(m) for m in line]) if sp else [r]
             for r, sp, line in zip(runs, spans, measured)]
 
 
-def _split_by_weight(run: dict, spans: list, weights: list[bool | None]) -> list[dict]:
+def _split_by_weight(run: dict, spans: list, values: list[float | None]) -> list[dict]:
     groups: list[list] = []
     closing = [run["text"][start:end].rstrip()[-1:] in CLOSING for _, _, start, end in spans]
-    for (x0, x1, start, _), bold in zip(spans, short_words_follow(weights, run.get("bold", False), closing)):
+    for (x0, x1, start, _), bold in zip(spans, line_bolds(values, run["fam"], run.get("bold", False), closing)):
         if groups and groups[-1][3] == bold:
             groups[-1][1] = x1
         else:
@@ -389,27 +389,6 @@ def _split_by_weight(run: dict, spans: list, weights: list[bool | None]) -> list
         part = {key: v for key, v in run.items() if key not in ("chars", "words", "weight_unknown")}
         parts.append(dict(part, text=run["text"][0 if n == 0 else start:end], x0=x0, x1=x1, bold=bold))
     return parts
-
-
-def short_words_follow(weights: list[bool | None], default: bool, closing: list[bool] | None = None) -> list[bool]:
-    """Weights of a line's words where the short ones (None: too short to
-    measure) take the weight of the word after them ("з хештегом"); one
-    that closes a phrase (closing: it ends in a comma, colon...: "очах ЦА,")
-    or ends the line takes the one before it; with nothing measured, the
-    run's own."""
-    closing = closing or [False] * len(weights)
-    after, nxt = None, []
-    for w in reversed(weights):
-        after = w if w is not None else after
-        nxt.append(after)
-    nxt.reverse()
-    out, before = [], next((w for w in weights if w is not None), default)
-    for w, n, close in zip(weights, nxt, closing):
-        if w is None:
-            w = before if close or n is None else n
-        out.append(w)
-        before = w
-    return out
 
 
 def _weigh_unknown(segments: list[dict], page) -> list[dict]:

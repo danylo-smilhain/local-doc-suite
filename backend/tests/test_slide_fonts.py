@@ -146,9 +146,9 @@ def test_bold_capitals_are_told_by_their_whole_height(sf, bold):
         assert all(sf.is_bold(m, w, "sans") == bold for m, w in zip(masks, text.split())), text
 
 
-def test_capitals_alone_do_not_tell_the_family(sf):
-    assert sf.capitals("КОНФЕРЕНЦІЇ") and sf.capitals("5) КУЛЬТУРНІ") and not sf.capitals("Канали")
-    assert not sf.capitals("2024")
+def test_capitals_and_digits_have_no_x_height(sf):
+    assert sf.no_x_height("КОНФЕРЕНЦІЇ") and sf.no_x_height("5) КУЛЬТУРНІ") and not sf.no_x_height("Канали")
+    assert sf.no_x_height("2024") and sf.no_x_height("3") and not sf.no_x_height("–")
 
 
 def test_words_as_heavy_as_bold_stay_bold_next_to_a_heavier_title(sf):
@@ -203,3 +203,29 @@ def test_a_bold_barely_heavier_than_its_regular_tells_nothing(sf):
     """Drawn bold only 8% heavier than drawn regular, a word's place between
     them is noise (here it would be 0.63 of the way)."""
     assert sf.boldness((1.05, 1.08)) is None and sf.boldness((1.05, 1.2)) is not None
+
+
+@pytest.mark.parametrize("bold", [False, True])
+def test_a_digit_is_weighed_by_its_whole_height(sf, bold):
+    """A big "3" alone on its line: its fullest rows are its bars, no body;
+    measured against them it came out five times regular and was dropped."""
+    path = FONTS["sans", bold][1]
+    for text in ("7", "77", "2024"):
+        assert sf.is_bold(word(sf, text, path, 120), text, "sans") == bold, text
+
+
+def test_a_short_word_goes_with_its_nearest_measured_neighbour(sf):
+    """"@Top Blogers UA – канал": "UA" is next to "Blogers", "канал" is two
+    words away; "–" is nearer "канал"."""
+    assert sf.line_bolds([1.19, 0.83, None, None, -0.54], "sans", False) == [True, True, True, False, False]
+    # on a tie, the word after it ("з хештегом"), unless it closes a phrase
+    assert sf.line_bolds([-0.5, None, 1.0], "sans", False) == [False, True, True]
+    assert sf.line_bolds([-0.5, None, 1.0], "sans", False, [False, True, False]) == [False, False, True]
+
+
+def test_a_word_near_the_threshold_goes_with_its_line(sf):
+    """Measured on a Gemini slide (serif, bold from 0.67): "Схема" (0.59) in
+    a bold title, "Віртуальна" (0.64) in a regular line."""
+    assert sf.line_bolds([0.59, 0.9, 0.85, 0.95], "serif", False) == [True] * 4
+    assert sf.line_bolds([0.64, 0.3, 0.2, 0.1], "serif", False) == [False] * 4
+    assert sf.line_bolds([0.64], "serif", False) == [False]          # alone: the threshold decides

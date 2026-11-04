@@ -215,9 +215,10 @@ def test_a_word_is_measured_in_its_own_box_not_in_a_misjudged_line(pp):
 def test_a_short_word_goes_with_the_word_after_it(pp):
     """"з хештегом", "Чи відповідає": a short word belongs to what follows;
     at the end of a line to what came before."""
-    assert pp.short_words_follow([True, None, False], False) == [True, False, False]
-    assert pp.short_words_follow([None, True, None], False) == [True, True, True]
-    assert pp.short_words_follow([None, None], True) == [True, True]
+    from app.slide_fonts import line_bolds
+    assert line_bolds([1.0, None, -0.3], "sans", False) == [True, False, False]
+    assert line_bolds([None, 1.0, None], "sans", False) == [True, True, True]
+    assert line_bolds([None, None], "sans", True) == [True, True]
 
 
 
