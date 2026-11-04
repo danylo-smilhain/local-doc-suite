@@ -15,7 +15,9 @@ then built from where the words are, not from either pass's layout.
 
 Glossary: a word is one Tesseract word with its box in pixels; a line is the
 words on one baseline with no column gap and no drawn line (a wall: a
-table's or a block's edge) between them.
+table's or a block's edge) between them. A word is sure at MIN_CONF; an
+unsure one (UNSURE_CONF up) is kept only when it stands in a line with a
+sure word and a second reading of it alone gives the same letters, sure.
 """
 import statistics
 from concurrent.futures import ThreadPoolExecutor
@@ -29,11 +31,23 @@ from PIL import Image, ImageChops
 from app.ocr import OCR_CONFIG
 
 # A word OCR is less sure of stays in the slide picture, where it is drawn
-# correctly. On the Canva decks every misreading ("KC" for a checkmark,
+# correctly, unless a second reading confirms it (confirmed). On the Canva decks every misreading ("KC" for a checkmark,
 # "R-3axonn?" for "PR-заходи?", "Soosa" for "Sposa") scored 84 or less, real
 # words 85-96. (Word's layout keeps 55: a page of text has no pictures to
 # leave a word in.)
 MIN_CONF = 85
+# Words this sure or more are read again when a line has a sure word:
+# "бізнес-моделі" came out right but 81% sure; Tesseract's guesses at a
+# checkmark ("KC" 69) or a photo ("ш" 71) read again come out different.
+UNSURE_CONF = 60
+# A word read again is cut out with this much of its height around it and
+# scaled so that its box is this many pixels high: bold "б" 40-80 px high
+# is read right (96), scaled to 110 px and more it is read "О" (31-57).
+REREAD_MARGIN = 0.3
+REREAD_HEIGHT = 60
+# An unsure word of fewer letters and digits than this is not read again:
+# icons before list items came out "x<" both times, a photo's "и" too.
+MIN_CONFIRM_CHARS = 3
 # A gap between two words wider than this many font sizes is not a space but
 # the gap between two columns (a normal space is about a third of one).
 COLUMN_GAP_EM = 1.5
@@ -80,7 +94,7 @@ def darkest_channel(img: Image.Image) -> Image.Image:
     return ImageChops.darker(ImageChops.darker(r, g), b)
 
 
-def read_words(img: Image.Image, lang: str) -> list[Word]:
+def read_words(img: Image.Image, lang: str, min_conf: float = MIN_CONF) -> list[Word]:
     data = pytesseract.image_to_data(img, lang=lang, config=OCR_CONFIG, output_type=pytesseract.Output.DICT)
     words = []
     for i, text in enumerate(data["text"]):
@@ -90,7 +104,7 @@ def read_words(img: Image.Image, lang: str) -> list[Word]:
             continue
         l, t, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
         text = (text or "").strip()
-        if text and conf >= MIN_CONF and w >= MIN_LETTER_WIDTH * h * len(text):
+        if text and conf >= min_conf and w >= MIN_LETTER_WIDTH * h * len(text):
             word = without_rules(Word(l, t, l + w, t + h, text, conf))
             if word is not None:
                 words.append(word)
@@ -130,10 +144,55 @@ def best_words(*passes: list[Word]) -> list[Word]:
 
 
 def read_slide_words(img: Image.Image, lang: str) -> list[Word]:
-    """All passes (Tesseract runs in its own process, so they run at once)."""
+    """All passes (Tesseract runs in its own process, so they run at once);
+    the sure words and the unsure ones a second reading confirms."""
     passes = [(picture, order) for picture in (img, darkest_channel(img)) for order in (lang, other_order(lang))]
     with ThreadPoolExecutor(len(passes)) as pool:
-        return best_words(*pool.map(lambda p: read_words(*p), passes))
+        words = best_words(*pool.map(lambda p: read_words(*p, min_conf=UNSURE_CONF), passes))
+    return confirmed(lines_of(words, np.asarray(img.convert("RGB"))), lambda w: read_again(img, w, lang))
+
+
+def same_letters(a: str, b: str) -> bool:
+    """Whether two readings have the same letters and digits (case, quotes
+    and punctuation aside)."""
+    letters = lambda t: [c for c in t.casefold() if c.isalnum()]
+    return bool(letters(a)) and letters(a) == letters(b)
+
+
+def confirmed(lines: list[list[Word]], again) -> list[Word]:
+    """The words to keep: the sure ones, and an unsure one in a line with a
+    sure word when its second reading (again: word -> (text, conf) or
+    None) has the same letters and is sure."""
+    kept = []
+    for line in lines:
+        has_sure = any(w.conf >= MIN_CONF for w in line)
+        for w in line:
+            if w.conf >= MIN_CONF:
+                kept.append(w)
+            elif has_sure and sum(c.isalnum() for c in w.text) >= MIN_CONFIRM_CHARS:
+                second = again(w)
+                if second is not None and second[1] >= MIN_CONF and same_letters(w.text, second[0]):
+                    kept.append(w)
+    return kept
+
+
+def read_again(img: Image.Image, word: Word, lang: str) -> tuple[str, float] | None:
+    """A word read on its own (Tesseract's single-line mode) from a cut-out
+    of the size Tesseract reads best, as in the slide passes (two pictures,
+    two language orders): the surest single-word reading."""
+    pad = REREAD_MARGIN * (word.y1 - word.y0)
+    crop = img.crop((max(0, word.x0 - pad), max(0, word.y0 - pad), word.x1 + pad, word.y1 + pad))
+    k = REREAD_HEIGHT / max(1, word.y1 - word.y0)
+    crop = crop.resize((max(1, round(crop.width * k)), max(1, round(crop.height * k))), Image.LANCZOS)
+    best = None
+    for picture in (crop, darkest_channel(crop)):
+        for order in (lang, other_order(lang)):
+            data = pytesseract.image_to_data(picture, lang=order, config="--oem 1 --psm 7",
+                                             output_type=pytesseract.Output.DICT)
+            read = [(t.strip(), float(c)) for t, c in zip(data["text"], data["conf"]) if t.strip()]
+            if len(read) == 1 and (best is None or read[0][1] > best[1]):
+                best = read[0]
+    return best
 
 
 def walled(picture: np.ndarray, last: Word, word: Word) -> bool:

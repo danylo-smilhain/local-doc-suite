@@ -410,6 +410,7 @@ NOTE_CELLS = ["Незручність і витрати", "Цифрові нео
 # Slide 2: the same in a sans font
 NOTE_SANS_TITLE = "Канали комунікації"           # bold sans
 NOTE_SANS_BODY = "Цифрова молодь та фахівці"      # regular sans
+NOTE_HYPHENED = "Схема бізнес-моделі"              # bold sans; Tesseract is only 81% sure of its second word
 NOTE_ARROW = (600, 400, 680, 520)                # a red chevron
 NOTE_BUTTON = (900, 400, 1200, 460)              # an orange button with white text
 NOTE_BUTTON_TEXT = "КОНФЕРЕНЦІЇ"
@@ -469,6 +470,7 @@ def notebook_slides_pdf(directory: Path, name: str = "notebook.pdf") -> Path:
     d = ImageDraw.Draw(img)
     d.text((k * 40, k * 60), NOTE_SANS_TITLE, font=font(DEJAVU_BOLD, 44), fill="black")
     d.text((k * 40, k * 220), NOTE_SANS_BODY, font=font(DEJAVU, 28), fill="black")
+    d.text((k * 40, k * 120), NOTE_HYPHENED, font=font(DEJAVU_BOLD, 44), fill="black")
     x0, y0, x1, y1 = NOTE_ARROW
     d.polygon([(k * x0, k * y0), (k * (x0 + 30), k * y0), (k * x1, k * (y0 + y1) / 2),
                (k * (x0 + 30), k * y1), (k * x0, k * y1), (k * (x1 - 30), k * (y0 + y1) / 2)], fill=(200, 16, 46))

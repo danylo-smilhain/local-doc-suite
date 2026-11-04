@@ -4,6 +4,7 @@ merging two OCR passes, the second pass's input, and building lines.
 app.slide_ocr pulls in app.config (through app.ocr), so it is imported only
 after the harness has set up storage, as in test_pdf_pptx_layout.py."""
 import pytest
+from conftest import needs_tesseract
 
 
 @pytest.fixture(scope="module")
@@ -152,3 +153,52 @@ def test_a_stroke_at_a_word_s_edge_is_no_line(so):
     assert len(so.lines_of(words, picture)) == 1
     picture[5:75, 119:122] = 0                      # a line in the middle of the gap
     assert len(so.lines_of(words, picture)) == 2
+
+
+def test_an_unsure_word_among_sure_ones_is_kept_when_a_second_reading_agrees(so):
+    """"бізнес-моделі" came out right but 81% sure next to "Схема" (96): read
+    again on its own, sure and the same letters, it is kept. A second
+    reading that differs ("|" read again as "T") or is unsure drops it."""
+    W = so.Word
+    line = [W(0, 0, 100, 40, "Схема", 96), W(120, 0, 400, 40, "бізнес-моделі", 81),
+            W(420, 0, 440, 40, "|", 82), W(460, 0, 600, 40, "клієнта", 70)]
+    again = {"бізнес-моделі": ("бізнес-моделі", 93), "|": ("T", 92), "клієнта": ("клієнта", 80)}
+    kept = so.confirmed([line], lambda w: again[w.text])
+    assert [w.text for w in kept] == ["Схема", "бізнес-моделі"]
+
+
+def test_a_line_of_unsure_words_alone_is_not_read_again(so):
+    """A logo's "GENIUS" (81) alone in its line: nothing sure to go by."""
+    W = so.Word
+    asked = []
+    kept = so.confirmed([[W(0, 0, 100, 40, "GENIUS", 81)]], lambda w: asked.append(w) or ("GENIUS", 95))
+    assert kept == [] and asked == []
+
+
+def test_the_same_letters_ignore_quotes_and_dots(so):
+    assert so.same_letters('"Слово"', '"Слово".') and so.same_letters("PR-захід", "PR-захід")
+    assert not so.same_letters("|", "T") and not so.same_letters("РВ-захід?", "PR-3axin?")
+
+
+@needs_tesseract
+@pytest.mark.parametrize("px", [40, 56, 80, 160])
+def test_a_word_read_again_on_its_own(so, px):
+    """The real second reading: a word cut out of the slide and read alone,
+    a big title too (bold "б" drawn large was read "О")."""
+    from PIL import Image, ImageDraw, ImageFont
+    img = Image.new("RGB", (px * 12, px * 4), "white")
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", px)
+    draw = ImageDraw.Draw(img)
+    draw.text((px, px), "бізнес-моделі", font=font, fill="black")
+    x0, y0, x1, y1 = draw.textbbox((px, px), "бізнес-моделі", font=font)
+    text, conf = so.read_again(img, so.Word(x0, y0, x1, y1, "бізнес-моделі", 81), "ukr+eng")
+    assert so.same_letters(text, "бізнес-моделі") and conf >= so.MIN_CONF
+
+
+def test_a_short_unsure_word_is_not_confirmed(so):
+    """A cross icon read "x<" (unsure) before a list item, and read the same
+    again: too little to tell a word from a drawing; it stays a picture."""
+    W = so.Word
+    line = [W(0, 0, 30, 40, "x<", 70), W(50, 0, 300, 40, "Непрорахований", 95), W(320, 0, 340, 40, "и", 70)]
+    kept = so.confirmed([line], lambda w: (w.text, 95))
+    assert [w.text for w in kept] == ["Непрорахований"]
