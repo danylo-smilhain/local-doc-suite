@@ -82,6 +82,19 @@ def test_ocr_text_colour_is_the_letters_not_the_background(pp, fg, bg, expected)
     assert pp.text_colour(img) == expected
 
 
+def test_white_letters_on_a_button_on_a_white_card_are_white(pp):
+    """The line's crop reaches past the button onto the white card: what
+    differs most from its edge is the button. The letters are what the
+    picture with the text painted out no longer has."""
+    from PIL import Image, ImageDraw
+    clean = Image.new("RGB", (120, 40), "white")
+    ImageDraw.Draw(clean).rectangle((10, 5, 110, 35), fill=(253, 135, 53))
+    img = clean.copy()
+    ImageDraw.Draw(img).rectangle((25, 12, 95, 28), fill="white")
+    assert pp.text_colour(img, clean) == "FFFFFF"
+    assert pp.text_colour(img) != "FFFFFF"                       # by the edge alone: the button
+
+
 def test_ocr_runs_use_a_sans_font(pp):
     from PIL import Image, ImageDraw
     seg = {"runs": [{"text": "Спікер", "font": "Times New Roman", "fam": "serif", "color": "000000",
@@ -116,21 +129,24 @@ def test_line_size_never_goes_below_the_smallest_size_written(pp):
     assert pp.line_size("a long line in a sliver of space", 20, width_pt=1) == LAYOUT_MIN_FONT_PT
 
 
-@pytest.mark.parametrize("font,bold", [("helv", False), ("hebo", True), ("tiro", False)])
+@pytest.mark.parametrize("font,fam,bold", [("helv", "sans", False), ("hebo", "sans", True),
+                                            ("tiro", "serif", False), ("tibo", "serif", True)])
 @pytest.mark.parametrize("size", [14, 30, 80])     # 14 pt at 132 dpi: 26 px, above MIN_WEIGH_PX
 @pytest.mark.parametrize("dpi", [132, 200])
-def test_bold_is_measured_from_the_thickness_of_the_letters(pp, font, bold, size, dpi):
+def test_bold_is_measured_from_the_thickness_of_the_letters(pp, font, fam, bold, size, dpi):
+    """Serif bold too: it is no thicker for its size than sans regular, but
+    it is thicker than the same words in serif regular."""
     import fitz
     from PIL import Image
     doc = fitz.open()
     page = doc.new_page(width=600, height=200)
     page.insert_text((20, 120), "Maria Brand", fontsize=size, fontname=font)
-    k = dpi / 72
     pix = page.get_pixmap(dpi=dpi, alpha=False)
     img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
-    width = fitz.Font(font).text_length("Maria", fontsize=size)
-    assert pp.looks_bold(img, (20 * k, (120 - 0.75 * size) * k, (20 + width) * k, (120 + 0.05 * size) * k),
-                         size * k) is bold
+    width = fitz.Font(font).text_length("Maria Brand", fontsize=size)
+    run = {"text": "Maria Brand", "size": size, "origin_y": 120, "x0": 20, "x1": 20 + width, "fam": fam,
+           "font": "x", "bold": not bold, "italic": False, "color": "000000"}
+    assert [r["bold"] for r in pp.weigh(run, img, dpi / 72)] == [bold]
 
 
 def test_a_run_wider_in_arial_is_condensed_then_shrunk_to_its_width(pp):
@@ -145,3 +161,133 @@ def test_a_run_wider_in_arial_is_condensed_then_shrunk_to_its_width(pp):
     assert spacing == -0.1 * size and size < 25
     assert abs(hebo.text_length(text, fontsize=size) + spacing * len(text) - wide * 0.7) < 0.01
     assert pp.fit_run(text, 25, "sans", True, False, wide * 1.2) == (25, 0)     # narrower in Arial: as is
+
+
+@pytest.mark.parametrize("font,fam", [("tiro", "serif"), ("hebo", "sans")])
+def test_a_word_too_short_to_measure_takes_its_neighbours_weight(pp, font, fam):
+    """One letter says nothing about its weight ("і" in "витрати і
+    фахівці" came out bold): it goes with the words around it."""
+    import fitz
+    from PIL import Image
+    text = "Незручність і витрати"
+    f = fitz.Font(font)
+    doc = fitz.open()
+    page = doc.new_page(width=600, height=200)
+    writer = fitz.TextWriter(page.rect)
+    writer.append((20, 120), text, font=f, fontsize=30)       # insert_text draws no Cyrillic in Times
+    writer.write_text(page)
+    pix = page.get_pixmap(dpi=150, alpha=False)
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    words, x = [], 20
+    for w in text.split():
+        words.append((x, x + f.text_length(w, fontsize=30), w))
+        x += f.text_length(w + " ", fontsize=30)
+    run = {"text": text, "size": 30, "origin_y": 120, "x0": 20, "x1": words[-1][1], "fam": fam, "words": words,
+           "font": "x", "bold": False, "italic": False, "color": "000000"}
+    parts = pp.weigh(run, img, 150 / 72)
+    assert [(p["text"], p["bold"]) for p in parts] == [(text, font == "hebo")]
+
+
+def test_a_word_is_measured_in_its_own_box_not_in_a_misjudged_line(pp):
+    """OCR's line size can be well off (a line of small letters); the band it
+    gives cut the top of the letters, which then looked bold. OCR words carry
+    their own top and bottom."""
+    import fitz
+    from PIL import Image
+    text = "валют одній картці депозит"
+    f = fitz.Font("tiro")
+    doc = fitz.open()
+    page = doc.new_page(width=700, height=200)
+    writer = fitz.TextWriter(page.rect)
+    writer.append((20, 120), text, font=f, fontsize=30)
+    writer.write_text(page)
+    pix = page.get_pixmap(dpi=150, alpha=False)
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    words, x = [], 20
+    for w in text.split():
+        words.append((x, x + f.text_length(w, fontsize=30), w, 120 - 30 * 0.5, 120 + 30 * 0.25))
+        x += f.text_length(w + " ", fontsize=30)
+    run = {"text": text, "size": 14, "origin_y": 118, "x0": 20, "x1": words[-1][1], "fam": "serif",
+           "words": words, "font": "x", "bold": False, "italic": False, "color": "000000"}
+    assert [p["bold"] for p in pp.weigh(run, img, 150 / 72)] == [False]
+
+
+def test_a_short_word_goes_with_the_word_after_it(pp):
+    """"з хештегом", "Чи відповідає": a short word belongs to what follows;
+    at the end of a line to what came before."""
+    assert pp.short_words_follow([True, None, False], False) == [True, False, False]
+    assert pp.short_words_follow([None, True, None], False) == [True, True, True]
+    assert pp.short_words_follow([None, None], True) == [True, True]
+
+
+
+def test_a_short_word_closing_a_phrase_goes_with_the_word_before_it(pp):
+    """"в очах ЦА, brand equity": "ЦА," ends the regular phrase, so it goes
+    with the words before it, not with "brand" after it."""
+    import fitz
+    from PIL import Image
+    text = "бренду в очах ЦА, brand equity"
+    f, fb = fitz.Font("helv"), fitz.Font("hebo")
+    doc = fitz.open()
+    page = doc.new_page(width=900, height=200)
+    writer = fitz.TextWriter(page.rect)
+    words, x = [], 20
+    for w in text.split():
+        font = fb if w in ("brand", "equity") else f
+        writer.append((x, 120), w, font=font, fontsize=30)
+        words.append((x, x + font.text_length(w, fontsize=30), w))
+        x += font.text_length(w + " ", fontsize=30)
+    writer.write_text(page)
+    pix = page.get_pixmap(dpi=150, alpha=False)
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    run = {"text": text, "size": 30, "origin_y": 120, "x0": 20, "x1": words[-1][1], "fam": "sans", "words": words,
+           "font": "x", "bold": False, "italic": False, "color": "000000"}
+    assert [(p["text"].strip(), p["bold"]) for p in pp.weigh(run, img, 150 / 72)] == [
+        ("бренду в очах ЦА,", False), ("brand equity", True)]
+
+
+@pytest.mark.parametrize("font,bold", [("hebo", True), ("helv", False)])
+def test_a_line_of_short_words_is_measured_all_the_same(pp, font, bold):
+    """"PR" alone in its line: nothing longer to go by, so it is measured."""
+    import fitz
+    from PIL import Image
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=200)
+    page.insert_text((20, 120), "PR", fontsize=60, fontname=font)
+    pix = page.get_pixmap(dpi=150, alpha=False)
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    run = {"text": "PR", "size": 60, "origin_y": 120, "x0": 20, "x1": 20 + fitz.Font(font).text_length("PR", 60),
+           "fam": "sans", "font": "x", "bold": not bold, "italic": False, "color": "000000"}
+    assert [p["bold"] for p in pp.weigh(run, img, 150 / 72)] == [bold]
+
+
+def test_a_two_letter_word_is_not_weighed_on_its_own(pp):
+    """"Це люди, у яких": two letters weighed alone came out bold where they
+    were not; they go with the words after them."""
+    import fitz
+    from PIL import Image
+    text = "Це люди, у яких більше"
+    f, fb = fitz.Font("helv"), fitz.Font("hebo")
+    doc = fitz.open()
+    page = doc.new_page(width=900, height=200)
+    writer = fitz.TextWriter(page.rect)
+    words, x = [], 20
+    for w in text.split():
+        font = fb if w == "Це" else f                     # as heavy as it was measured
+        writer.append((x, 120), w, font=font, fontsize=30)
+        words.append((x, x + font.text_length(w, fontsize=30), w))
+        x += font.text_length(w + " ", fontsize=30)
+    writer.write_text(page)
+    pix = page.get_pixmap(dpi=150, alpha=False)
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    run = {"text": text, "size": 30, "origin_y": 120, "x0": 20, "x1": words[-1][1], "fam": "sans", "words": words,
+           "font": "x", "bold": False, "italic": False, "color": "000000"}
+    assert [p["bold"] for p in pp.weigh(run, img, 150 / 72)] == [False]
+
+
+def test_a_serif_line_takes_its_size_from_times_widths(pp):
+    import fitz
+    text = "Розробка бізнес-моделі"
+    width = 400.0
+    assert abs(pp.line_size(text, 20, width, "serif") - width / fitz.Font("tiro").text_length(text, 1)) < 1e-6
+    assert pp.line_size(text, 20, width, "serif") > pp.line_size(text, 20, width, "sans")

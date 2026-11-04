@@ -128,7 +128,6 @@ def test_a_word_too_few_to_be_text_stays_in_the_picture(api, files):
     and nothing is painted out of the picture either."""
     import fitz
     import numpy as np
-
     from test_pdf_to_pptx import seen
     png = fx.text_image(files, "few.png")              # "INVOICE 2024"
     doc = fitz.open()
@@ -139,3 +138,48 @@ def test_a_word_too_few_to_be_text_stays_in_the_picture(api, files):
     assert text_boxes(prs.slides[0]) == []
     dark = (np.asarray(seen(prs, prs.slides[0]).convert("L")) < 100).mean()
     assert dark > 0.002
+
+
+def looks(prs, slide):
+    """{text of a run: (font name, bold)} for every run of a slide's text."""
+    return {r.text.strip(): (r.font.name, bool(r.font.bold))
+            for b in text_boxes(slide) for p in b.text_frame.paragraphs for r in p.runs if r.text.strip()}
+
+
+def look_of(runs, text):
+    """The (font, bold) of the run holding text, or of all runs whose words make it up."""
+    found = {v for k, v in runs.items() if k in text or text in k}
+    assert len(found) == 1, (text, runs)
+    return found.pop()
+
+
+@needs_tesseract
+def test_serif_text_gets_a_serif_font_and_keeps_its_weight(api, files):
+    _, data = api.roundtrip(fx.notebook_slides_pdf(files), "pptx-ocr")
+    prs = slides_of(data)
+    runs = looks(prs, prs.slides[0])
+    assert look_of(runs, fx.NOTE_TITLE) == ("Times New Roman", True)
+    for head in fx.NOTE_HEADER:
+        assert look_of(runs, head) == ("Times New Roman", True), head
+    for text in fx.NOTE_CELLS + [fx.NOTE_BOX_TEXT]:
+        assert look_of(runs, text) == ("Times New Roman", False), text
+
+
+@needs_tesseract
+def test_sans_text_gets_a_sans_font_and_keeps_its_weight(api, files):
+    _, data = api.roundtrip(fx.notebook_slides_pdf(files), "pptx-ocr")
+    prs = slides_of(data)
+    runs = looks(prs, prs.slides[1])
+    assert look_of(runs, fx.NOTE_SANS_TITLE) == ("Arial", True)
+    assert look_of(runs, fx.NOTE_SANS_BODY) == ("Arial", False)
+
+
+@needs_tesseract
+def test_white_text_on_a_coloured_button_stays_white(api, files):
+    """Around the button is the white page: the letters are what differs
+    from the button under them, not what differs most from the page."""
+    _, data = api.roundtrip(fx.notebook_slides_pdf(files), "pptx-ocr")
+    prs = slides_of(data)
+    runs = [r for b in text_boxes(prs.slides[1]) for p in b.text_frame.paragraphs for r in p.runs
+            if fx.NOTE_BUTTON_TEXT in r.text]
+    assert runs and all(min(r.font.color.rgb) > 230 for r in runs), [str(r.font.color.rgb) for r in runs]

@@ -31,13 +31,14 @@ from pptx.util import Emu, Pt
 
 from app.ocr import (OCR_DPI, OCR_LANG_SAMPLE_PAGES, _choose_ocr_lang_order, _ocr_png, _render_page_png,
                      available_ocr_lang, page_text_is_broken)
-from app.pdf_layout import (_FONT_FAMILIES, LAYOUT_BG_DPI, LAYOUT_GFX_CLUSTER_GAP_PT, LAYOUT_MIN_FONT_PT,
+from app.pdf_layout import (LAYOUT_BG_DPI, LAYOUT_GFX_CLUSTER_GAP_PT, LAYOUT_MIN_FONT_PT,
                             LAYOUT_SCAN_COVER,
                             _collect_page_text, _find_grid_tables, _image_bytes, _inpaint_boxes,
                             _layout_page_is_scan, _metric_font, _ocr_line_run, _paint_log, _render_without_text,
                             _rotated_text_rects, _text_decorations, _vector_table_primitives, _xy_cut)
 from app.pdf_text import repair_pdf_tounicode
 from app.slide_ocr import lines_of, read_slide_words
+from app.slide_fonts import MIN_VOTE_LETTERS, bold_of, capitals, family, font_name, ink, relative_weight
 from app.slide_raster import split_picture
 
 logger = logging.getLogger(__name__)
@@ -78,14 +79,15 @@ UNDERLAY = (1, 0, 1)
 # LETTER_CONTRAST (0-255) from its main colour (letters fill 15-40% of a box).
 LETTER_CONTRAST = 60
 LETTER_SHARE = 0.05
-# Stroke thickness of the letters per font size, where the font does not tell
-# its weight. Measured at 132-200 dpi: regular sans 0.065-0.096 (Helvetica,
-# DejaVu, the Canva decks), bold sans 0.123-0.19. Serif bold (Times: 0.09-0.12)
-# is not told apart and stays regular; regular text is never taken for bold.
-BOLD_STROKE_EM = 0.11
 # Letters smaller than this many pixels have strokes of a pixel or two, too
 # coarse to tell bold from regular; their weight stays as the PDF says.
 MIN_WEIGH_PX = 20
+# A word of fewer letters or digits than this is too little ink to weigh
+# ("і" came out bold, so did "Це", "не", "1M"); it goes with its neighbours
+# (short_words_follow), unless its line has nothing longer ("PR" alone).
+# What ends in one of CLOSING ends a phrase: it goes with what came before.
+MIN_WEIGHED_CHARS = 3
+CLOSING = ",.:;!?)»"
 # An OCR line with at least this many letters takes its size from its width.
 LINE_SIZE_MIN_LETTERS = 4
 # A recognised word is painted out of the slide picture this many times its
@@ -192,7 +194,7 @@ def _ocr_page(page, lang: str, scan: bool) -> PageContent:
     segments = [{"runs": [run]} for run in runs if run]
     found = ocr_found_text(segments)
     clean = _inpaint_boxes(full_img, [word_ink_box(w) for w in words]) if found else full_img
-    segments = style_ocr_segments(segments, 72.0 / dpi, full_img) if found else []
+    segments = style_ocr_segments(segments, 72.0 / dpi, full_img, clean) if found else []
     objects = split_picture(clean, 72.0 / dpi, 72.0 / SLIDE_DPI)
     if objects is None:
         return PageContent(clean, segments, False, found)
@@ -234,32 +236,35 @@ def has_letters(img: Image.Image, box) -> bool:
     return differ >= LETTER_SHARE * len(pixels)
 
 
-def text_colour(img: Image.Image) -> str:
+def text_colour(img: Image.Image, clean: Image.Image | None = None) -> str:
     """Colour of the letters in a crop around a recognised line: the pixels
-    farthest from the background (the median of the crop's border)."""
-    rgb = img.convert("RGB")
-    w, h = rgb.size
-    px = rgb.load()
-    border = [px[x, y] for x in range(w) for y in (0, h - 1)] + [px[x, y] for y in range(h) for x in (0, w - 1)]
-    bg = tuple(sorted(c[i] for c in border)[len(border) // 2] for i in range(3))
-    pixels = list(rgb.getdata())
-    dist = [sum((a - b) ** 2 for a, b in zip(p, bg)) for p in pixels]
-    far = max(dist)
-    if far == 0:
+    farthest from what is under them. With the same crop of the picture
+    with the text painted out (clean) that is known pixel by pixel (white
+    letters on an orange button on a white card); else it is the median of
+    the crop's border."""
+    a = np.asarray(img.convert("RGB")).astype(int)
+    if clean is not None:
+        under = np.asarray(clean.convert("RGB")).astype(int)
+    else:
+        border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
+        under = np.median(border, axis=0)
+    dist = ((a - under) ** 2).sum(axis=2)
+    if dist.max() == 0:
         return "000000"
-    ink = [p for p, d in zip(pixels, dist) if d >= 0.6 * far]
-    return "".join("%02X" % round(sum(p[i] for p in ink) / len(ink)) for i in range(3))
+    ink = a[dist >= 0.6 * dist.max()]
+    return "".join("%02X" % round(v) for v in ink.mean(axis=0))
 
 
-def line_size(text: str, size: float, width_pt: float) -> float:
+def line_size(text: str, size: float, width_pt: float, fam: str = "sans") -> float:
     """The font size of an OCR line on the slide. OCR guesses it from the
     height of the word boxes, which depends on the letters ("покази" has no
     tall ones, a bullet read as "-" is a dash): off by up to a third. A line
-    of a few letters gets the size at which it fills its width in the sans
-    font the slide uses (Arial; Helvetica's metrics), so it also keeps its
-    place; a shorter one keeps OCR's size, shrunk if it is too wide. Never
-    below the smallest size the layout writes (PowerPoint refuses < 1 pt)."""
-    length = fitz.Font("helv").text_length(text, fontsize=1)
+    of a few letters gets the size at which it fills its width in the font
+    the slide uses (Arial or Times New Roman: Helvetica's or Times' metrics),
+    so it also keeps its place; a shorter one keeps OCR's size, shrunk if it
+    is too wide. Never below the smallest size the layout writes (PowerPoint
+    refuses < 1 pt)."""
+    length = _metric_font(fam, False, False).text_length(text, fontsize=1)
     if sum(c.isalnum() for c in text) >= LINE_SIZE_MIN_LETTERS:
         size = width_pt / length
     else:
@@ -267,41 +272,54 @@ def line_size(text: str, size: float, width_pt: float) -> float:
     return max(LAYOUT_MIN_FONT_PT, size)
 
 
-def style_ocr_segments(segments: list[dict], scale_pt: float, img: Image.Image) -> list[dict]:
-    """OCR runs come out black Times New Roman; on a slide they take a sans
-    font, the colour of their letters in the page picture, bold where the
-    letters are thick, and one size for the line that keeps it in its place."""
+def style_ocr_segments(segments: list[dict], scale_pt: float, img: Image.Image,
+                       clean: Image.Image | None = None) -> list[dict]:
+    """OCR runs come out black Times New Roman; on a slide they take the
+    family their letters look like (slide_fonts.family: serif or sans), the
+    colour of their letters in the page picture, bold where the letters are
+    bold, and one size for the line that keeps it in its place."""
+    picture = np.asarray(img.convert("RGB"))
+    k = 1.0 / scale_pt
     for seg in segments:
-        runs = []
         for r in seg["runs"]:
             box = (r["x0"] / scale_pt, (r["origin_y"] - 0.9 * r["size"]) / scale_pt,
                    r["x1"] / scale_pt, (r["origin_y"] + 0.25 * r["size"]) / scale_pt)
-            r["font"], r["fam"] = _FONT_FAMILIES["sans"][0], "sans"
-            r["color"] = text_colour(img.crop(tuple(round(v) for v in box)))
-            r["size"] = line_size(r["text"], r["size"], r["x1"] - r["x0"])
-            runs += weigh(r, img, 1.0 / scale_pt)
-        seg["runs"] = runs
-    return segments
+            words = [(r["text"][start:end], letters(picture, r, x0, x1, k, rows))
+                     for (x0, x1, start, end), rows in zip(_word_spans(r), _word_rows(r))]
+            # capitals do not tell serif from sans: a line of them stays sans
+            voters = [m for text, m in words if sum(c.isalpha() for c in text) >= MIN_VOTE_LETTERS
+                      and not capitals(text)] or [m for text, m in words if not capitals(text)]
+            r["fam"] = family([m for m in voters if m.any()], r["size"] * k)
+            r["font"] = font_name(r["fam"])
+            crop = tuple(round(v) for v in box)
+            r["color"] = text_colour(img.crop(crop), clean.crop(crop) if clean is not None else None)
+            r["size"] = line_size(r["text"], r["size"], r["x1"] - r["x0"], r["fam"])
+    parts = iter(weigh_page([r for seg in segments for r in seg["runs"]], img, k))
+    return [dict(seg, runs=[p for _ in seg["runs"] for p in next(parts)]) for seg in segments]
 
 
-def looks_bold(img: Image.Image, box, size_px: float) -> bool:
-    """Whether the letters in a box (pixels) are bold: their stroke thickness
-    (twice the ink area over its outline) against the font size."""
-    a = np.asarray(img.crop(tuple(round(v) for v in box)).convert("RGB")).astype(int)
-    if a.size == 0:
-        return False
-    border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
-    dist = np.abs(a - np.median(border, axis=0)).max(axis=2)
-    if dist.max() == 0:
-        return False
-    ink = dist >= 0.5 * dist.max()
-    inner = ink.copy()
-    inner[1:] &= ink[:-1]
-    inner[:-1] &= ink[1:]
-    inner[:, 1:] &= ink[:, :-1]
-    inner[:, :-1] &= ink[:, 1:]
-    outline = int((ink & ~inner).sum())
-    return 2 * int(ink.sum()) / max(1, outline) / size_px > BOLD_STROKE_EM
+def letters(picture: np.ndarray, run: dict, x0: float, x1: float, k: float, rows=None) -> np.ndarray:
+    """The ink of the letters between x0 and x1 (points) on a run's line, in
+    the page picture (RGB array, k pixels per point): between rows (top
+    and bottom in points, an OCR word's own box), or else from the line's
+    cap height to just under its baseline."""
+    if rows is not None:
+        top, bottom = rows[0] * k, rows[1] * k
+    else:
+        top, bottom = (run["origin_y"] - 0.75 * run["size"]) * k, (run["origin_y"] + 0.05 * run["size"]) * k
+    h, w = picture.shape[:2]
+    crop = picture[max(0, round(top)):min(h, round(bottom)), max(0, round(x0 * k - 2)):min(w, round(x1 * k + 2))]
+    return ink(crop) if crop.size else np.zeros((0, 0), bool)
+
+
+def _word_rows(run: dict) -> list[tuple[float, float] | None]:
+    """For each of _word_spans: its top and bottom in points where the run's
+    words carry them (OCR), else None."""
+    spans = _word_spans(run)
+    words = run.get("words") or []
+    if len(words) == len(spans) and all(len(w) >= 5 for w in words):
+        return [(w[3], w[4]) for w in words]
+    return [None] * len(spans)
 
 
 def _word_spans(run: dict) -> list[tuple[float, float, int, int]]:
@@ -311,7 +329,7 @@ def _word_spans(run: dict) -> list[tuple[float, float, int, int]]:
     text, whole = run["text"], [(run["x0"], run["x1"], 0, len(run["text"]))]
     if run.get("words"):
         spans, pos = [], 0
-        for x0, x1, word in run["words"]:
+        for x0, x1, word, *_ in run["words"]:
             start = text.find(word, pos)
             if start < 0:
                 return whole
@@ -335,15 +353,32 @@ def _word_spans(run: dict) -> list[tuple[float, float, int, int]]:
 
 
 def weigh(run: dict, img: Image.Image, k: float) -> list[dict]:
-    """A run whose font does not tell its weight, split into runs where its
-    words turn bold or regular in the picture (k = pixels per point)."""
-    size_px = run["size"] * k
-    if size_px < MIN_WEIGH_PX:
-        return [run]
-    top, bottom = (run["origin_y"] - 0.75 * run["size"]) * k, (run["origin_y"] + 0.05 * run["size"]) * k
+    """One run on its own page (see weigh_page)."""
+    return weigh_page([run], img, k)[0]
+
+
+def weigh_page(runs: list[dict], img: Image.Image, k: float) -> list[list[dict]]:
+    """The runs of one page whose font does not tell their weight, each split
+    into runs where its words turn bold or regular in the picture (k =
+    pixels per point; slide_fonts.bold_of); words too short to measure
+    follow their line."""
+    picture = np.asarray(img.convert("RGB"))
+    spans = [_word_spans(r) if r["size"] * k >= MIN_WEIGH_PX else [] for r in runs]
+    measured = []
+    for r, sp in zip(runs, spans):
+        long = [sum(c.isalnum() for c in r["text"][start:end]) >= MIN_WEIGHED_CHARS for _, _, start, end in sp]
+        # a line of short words only ("PR") has nothing longer to go by
+        measured.append([relative_weight(letters(picture, r, x0, x1, k, rows), r["text"][start:end], r["fam"])
+                         if is_long or not any(long) else None
+                         for (x0, x1, start, end), rows, is_long in zip(sp, _word_rows(r), long)])
+    return [_split_by_weight(r, sp, [bold_of(m, r["fam"]) for m in line]) if sp else [r]
+            for r, sp, line in zip(runs, spans, measured)]
+
+
+def _split_by_weight(run: dict, spans: list, weights: list[bool | None]) -> list[dict]:
     groups: list[list] = []
-    for x0, x1, start, _ in _word_spans(run):
-        bold = looks_bold(img, (x0 * k - 2, top, x1 * k + 2, bottom), size_px)
+    closing = [run["text"][start:end].rstrip()[-1:] in CLOSING for _, _, start, end in spans]
+    for (x0, x1, start, _), bold in zip(spans, short_words_follow(weights, run.get("bold", False), closing)):
         if groups and groups[-1][3] == bold:
             groups[-1][1] = x1
         else:
@@ -356,6 +391,27 @@ def weigh(run: dict, img: Image.Image, k: float) -> list[dict]:
     return parts
 
 
+def short_words_follow(weights: list[bool | None], default: bool, closing: list[bool] | None = None) -> list[bool]:
+    """Weights of a line's words where the short ones (None: too short to
+    measure) take the weight of the word after them ("з хештегом"); one
+    that closes a phrase (closing: it ends in a comma, colon...: "очах ЦА,")
+    or ends the line takes the one before it; with nothing measured, the
+    run's own."""
+    closing = closing or [False] * len(weights)
+    after, nxt = None, []
+    for w in reversed(weights):
+        after = w if w is not None else after
+        nxt.append(after)
+    nxt.reverse()
+    out, before = [], next((w for w in weights if w is not None), default)
+    for w, n, close in zip(weights, nxt, closing):
+        if w is None:
+            w = before if close or n is None else n
+        out.append(w)
+        before = w
+    return out
+
+
 def _weigh_unknown(segments: list[dict], page) -> list[dict]:
     """Text-layer runs in fonts that do not tell their weight (Canva's
     "Unnamed-T3") take it from the page picture."""
@@ -364,7 +420,8 @@ def _weigh_unknown(segments: list[dict], page) -> list[dict]:
     pix = page.get_pixmap(dpi=LAYOUT_BG_DPI, alpha=False)
     img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
     k = LAYOUT_BG_DPI / 72
-    return [dict(seg, runs=[p for r in seg["runs"] for p in (weigh(r, img, k) if r.get("weight_unknown") else [r])])
+    parts = iter(weigh_page([r for seg in segments for r in seg["runs"] if r.get("weight_unknown")], img, k))
+    return [dict(seg, runs=[p for r in seg["runs"] for p in (next(parts) if r.get("weight_unknown") else [r])])
             for seg in segments]
 
 

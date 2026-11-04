@@ -627,8 +627,10 @@ def _ocr_line_run(words, scale_pt):
         # базовая линия ~ низ букв без выносных элементов
         "origin_y": bottom * scale_pt - 0.2 * size * 0.72,
         # слова с координатами: строку, пересекающую ячейки таблицы,
-        # режем по словам между ячейками
-        "words": [(w[0] * scale_pt, w[2] * scale_pt, _clean_xml_text(w[4])) for w in words],
+        # режем по словам между ячейками; верх и низ слова (x0, x1, текст,
+        # y0, y1) — для оценки начертания по его собственной рамке
+        "words": [(w[0] * scale_pt, w[2] * scale_pt, _clean_xml_text(w[4]), w[1] * scale_pt, w[3] * scale_pt)
+                  for w in words],
     }
 
 

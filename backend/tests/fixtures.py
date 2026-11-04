@@ -411,6 +411,8 @@ NOTE_CELLS = ["Незручність і витрати", "Цифрові нео
 NOTE_SANS_TITLE = "Канали комунікації"           # bold sans
 NOTE_SANS_BODY = "Цифрова молодь та фахівці"      # regular sans
 NOTE_ARROW = (600, 400, 680, 520)                # a red chevron
+NOTE_BUTTON = (900, 400, 1200, 460)              # an orange button with white text
+NOTE_BUTTON_TEXT = "КОНФЕРЕНЦІЇ"
 
 
 def notebook_slides_pdf(directory: Path, name: str = "notebook.pdf") -> Path:
@@ -419,7 +421,8 @@ def notebook_slides_pdf(directory: Path, name: str = "notebook.pdf") -> Path:
     1. A serif deck: a logo of diamonds, a bold red title over a thin rule, a
        target icon, a table with vertical lines whose cells' text comes
        within a few points of the next cell's, an orange box with text.
-    2. A sans deck: a bold title, regular text, a red chevron."""
+    2. A sans deck: a bold title, regular text, a red chevron, an orange
+       button with white bold text on the white page."""
     import fitz
     from PIL import Image, ImageDraw, ImageFont
     k = 2                                       # pixels per point
@@ -469,6 +472,9 @@ def notebook_slides_pdf(directory: Path, name: str = "notebook.pdf") -> Path:
     x0, y0, x1, y1 = NOTE_ARROW
     d.polygon([(k * x0, k * y0), (k * (x0 + 30), k * y0), (k * x1, k * (y0 + y1) / 2),
                (k * (x0 + 30), k * y1), (k * x0, k * y1), (k * (x1 - 30), k * (y0 + y1) / 2)], fill=(200, 16, 46))
+    d.rounded_rectangle([k * v for v in NOTE_BUTTON], radius=8 * k, fill=(253, 135, 53))
+    d.text((k * (NOTE_BUTTON[0] + 40), k * (NOTE_BUTTON[1] + 14)), NOTE_BUTTON_TEXT, font=font(DEJAVU_BOLD, 26),
+           fill="white")
     put(img)
 
     path = directory / name
