@@ -292,3 +292,17 @@ def test_an_italic_line_takes_the_family_of_its_page(sf):
     assert sf.page_families(fams, slanted) == ["serif", "serif", "sans", "serif", "serif"]
     assert sf.page_families(["sans", "serif"], [True, True]) == ["sans", "serif"]       # nothing upright
     assert sf.page_families(["serif", "sans", "serif"], [False, False, True]) == ["serif", "sans", "serif"]  # a tie
+
+
+def test_a_word_leaning_a_little_is_not_italic(sf):
+    """An upright bold heading measured 0.10 on a Gemini slide (a short
+    line); a photographed page leans a little too. Italic leans 0.14 and more."""
+    for lean in (0.06, 0.09):
+        masks = []
+        for w in ("Загальні", "сегменти", "клієнта"):
+            m = word(sf, w, FONTS["sans", True][1], 66)
+            img = Image.fromarray(m.astype(np.uint8) * 255)
+            img = img.transform((img.width + 20, img.height), Image.AFFINE, (1, lean, -lean * img.height / 2, 0, 1, 0),
+                                resample=Image.BILINEAR)
+            masks.append(np.asarray(img) > 127)
+        assert not sf.italic(masks), lean

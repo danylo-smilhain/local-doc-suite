@@ -229,3 +229,17 @@ def test_a_drawn_bullet_is_not_a_letter(so):
     assert not so.drawn_mark(picture, W(100, 45, 164, 52, "—", 92))
     assert not so.drawn_mark(picture, W(200, 30, 240, 68, "=", 90))
     assert not so.drawn_mark(picture, W(10, 30, 49, 68, "О", 91))     # a letter is never a mark
+
+
+def test_a_second_reading_must_agree_and_be_sure(so):
+    W = so.Word
+    line = [W(0, 0, 100, 40, "Схема", 96), W(120, 0, 300, 40, "клієнта", 80), W(320, 0, 400, 40, "для", 75)]
+    again = {"клієнта": ("кліснта", 92), "для": ("Для", 93)}
+    assert [w.text for w in so.confirmed([line], lambda w: again[w.text])] == ["Схема", "для"]
+
+
+def test_a_percent_needs_a_sure_second_reading_of_the_same_digits(so):
+    W = so.Word
+    again = {"2096": ("2O96", 95), "596,": ("5%,", 50), "4096": ("40%", 61)}
+    assert [so.with_percent(W(0, 0, 100, 40, t, 93), lambda w: again[w.text]).text for t in again] == [
+        "2096", "596,", "40%"]
