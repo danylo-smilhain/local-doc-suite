@@ -202,3 +202,30 @@ def test_a_short_unsure_word_is_not_confirmed(so):
     line = [W(0, 0, 30, 40, "x<", 70), W(50, 0, 300, 40, "Непрорахований", 95), W(320, 0, 340, 40, "и", 70)]
     kept = so.confirmed([line], lambda w: (w.text, 95))
     assert [w.text for w in kept] == ["Непрорахований"]
+
+
+def test_a_percent_read_as_96_is_read_again(so):
+    """Tesseract reads "%" after digits as "96" ("20%" -> "2096", "5%," ->
+    "596,"); read alone, the same digits come with "%". A year read again
+    the same stays a year."""
+    W = so.Word
+    again = {"2096": ("20%", 95), "596,": ("5%,", 69), "1996": ("1996", 96), "3096": ("3096", 90)}
+    fixed = [so.with_percent(W(0, 0, 100, 40, t, 93), lambda w: again[w.text]).text for t in again]
+    assert fixed == ["20%", "5%,", "1996", "3096"]
+    word = W(0, 0, 100, 40, "кешбек", 96)
+    assert so.with_percent(word, lambda w: ("x", 0)) is word
+
+
+def test_a_drawn_bullet_is_not_a_letter(so):
+    """A filled square before a list item came out "=" (87-91% sure); a dash
+    is as filled but long and flat, "=" itself is half empty."""
+    import numpy as np
+    W = so.Word
+    picture = np.full((100, 300, 3), 255, np.uint8)
+    picture[30:68, 10:49] = (200, 16, 46)                # a red square bullet
+    picture[45:52, 100:164] = 0                          # a dash
+    picture[30:38, 200:240] = picture[60:68, 200:240] = 0  # "="
+    assert so.drawn_mark(picture, W(10, 30, 49, 68, "=", 91))
+    assert not so.drawn_mark(picture, W(100, 45, 164, 52, "—", 92))
+    assert not so.drawn_mark(picture, W(200, 30, 240, 68, "=", 90))
+    assert not so.drawn_mark(picture, W(10, 30, 49, 68, "О", 91))     # a letter is never a mark
