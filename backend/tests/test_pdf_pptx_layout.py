@@ -292,3 +292,28 @@ def test_a_serif_line_takes_its_size_from_times_widths(pp):
     width = 400.0
     assert abs(pp.line_size(text, 20, width, "serif") - width / fitz.Font("tiro").text_length(text, 1)) < 1e-6
     assert pp.line_size(text, 20, width, "serif") > pp.line_size(text, 20, width, "sans")
+
+
+@pytest.mark.parametrize("text", ["CAC vs CPA", "(24/7)", "AVA VAT"])
+def test_capitals_and_digits_do_not_make_a_line_italic(pp, text):
+    """The diagonals of A, V, 7 and "/" lean like italic strokes: a line of
+    capitals and digits is no evidence of a slant."""
+    import fitz
+    import numpy as np
+    from PIL import Image
+    doc = fitz.open()
+    page = doc.new_page(width=600, height=200)
+    page.insert_text((20, 120), text, fontsize=40, fontname="hebo")
+    pix = page.get_pixmap(dpi=150, alpha=False)
+    img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    f = fitz.Font("hebo")
+    words, x = [], 20
+    for w in text.split():
+        words.append((x, x + f.text_length(w, fontsize=40), w))
+        x += f.text_length(w + " ", fontsize=40)
+    run = {"text": text, "size": 40, "origin_y": 120, "x0": 20, "x1": words[-1][1], "words": words,
+           "font": "x", "fam": "sans", "bold": True, "italic": False, "color": "000000"}
+    k = 150 / 72
+    picture = np.asarray(img)
+    masks = [pp.letters(picture, run, x0, x1, k) for x0, x1, _ in words]
+    assert not pp.italic(pp.slanted(masks, [w for *_, w in words]))

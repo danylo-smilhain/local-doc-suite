@@ -28,6 +28,9 @@ Glossary (all on a word's ink, the pixels of its letters):
   regular -0.15, its semibold starts at 0.44); a serif word two thirds of
   the way (0.67: Times regular is lighter than most serifs', Gemini's
   regular reaches 0.64 ("Віртуальна"), its bold starts at 0.70 ("засади"));
+- slant: how far the strokes lean right per pixel of height, found as the
+  shear that stands them upright (the sharpest columns of ink); upright
+  fonts measure -0.03 to 0.02, italic and oblique 0.14 to 0.20;
 - a line's weights: a word within UNSURE of its threshold ("Схема", 0.59
   in a bold title) takes the weight most of its line's other words have;
   a word not measured (too short: "UA", "і", "–") that of its nearest
@@ -64,6 +67,9 @@ MIN_BOLD_GAIN = 1.15
 # Deciding per page instead (splitting its words into two weights) split
 # pages of one weight: 19 of 28 regular words of a Gemini slide came out bold.
 BOLD_FROM = {"sans": 0.3, "serif": 0.67}
+# A line whose words' median slant reaches this is italic (see the glossary).
+ITALIC_SLANT = 0.12
+SLANTS = np.arange(-0.1, 0.5, 0.02)
 # A word this near its family's threshold is decided by its line.
 UNSURE = 0.1
 # A contrast below this is a stroke mis-measured (a bar three times a stem):
@@ -159,6 +165,25 @@ def family(masks: list[np.ndarray], size_px: float) -> str:
     f = float(np.median([feet(m) for m in measured]))
     serif = c >= SERIF_CONTRAST or (c >= FOOTED_CONTRAST and f >= SERIF_FEET)
     return "serif" if serif else "sans"
+
+
+def slant(mask: np.ndarray) -> float:
+    """The slant of a word's strokes (see the glossary)."""
+    ys, xs = np.nonzero(mask)
+    if not len(xs):
+        return 0.0
+    best, at = -1.0, 0.0
+    for s in SLANTS:
+        x = np.round(xs + s * (ys - mask.shape[0] / 2)).astype(int)
+        sharpness = float((np.bincount(x - x.min()).astype(float) ** 2).sum())
+        if sharpness > best:
+            best, at = sharpness, float(s)
+    return at
+
+
+def italic(masks: list[np.ndarray]) -> bool:
+    """Whether a line is italic, from the ink of its words."""
+    return bool(masks) and float(np.median([slant(m) for m in masks])) >= ITALIC_SLANT
 
 
 def drawn(text: str, fam: str, bold: bool, height: int, whole: bool = False) -> np.ndarray:

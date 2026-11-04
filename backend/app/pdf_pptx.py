@@ -38,7 +38,8 @@ from app.pdf_layout import (LAYOUT_BG_DPI, LAYOUT_GFX_CLUSTER_GAP_PT, LAYOUT_MIN
                             _rotated_text_rects, _text_decorations, _vector_table_primitives, _xy_cut)
 from app.pdf_text import repair_pdf_tounicode
 from app.slide_ocr import lines_of, read_slide_words
-from app.slide_fonts import MIN_VOTE_LETTERS, boldness, family, font_name, ink, line_bolds, no_x_height, relative_weight
+from app.slide_fonts import (MIN_VOTE_LETTERS, boldness, family, font_name, ink, italic, line_bolds, no_x_height,
+                             relative_weight)
 from app.slide_raster import split_picture
 
 logger = logging.getLogger(__name__)
@@ -291,11 +292,20 @@ def style_ocr_segments(segments: list[dict], scale_pt: float, img: Image.Image,
                       and not no_x_height(text)] or [m for text, m in words if not no_x_height(text)]
             r["fam"] = family([m for m in voters if m.any()], r["size"] * k)
             r["font"] = font_name(r["fam"])
+            r["italic"] = italic(slanted([m for _, m in words], [t for t, _ in words]))
             crop = tuple(round(v) for v in box)
             r["color"] = text_colour(img.crop(crop), clean.crop(crop) if clean is not None else None)
             r["size"] = line_size(r["text"], r["size"], r["x1"] - r["x0"], r["fam"])
     parts = iter(weigh_page([r for seg in segments for r in seg["runs"]], img, k))
     return [dict(seg, runs=[p for _ in seg["runs"] for p in next(parts)]) for seg in segments]
+
+
+def slanted(masks: list[np.ndarray], texts: list[str]) -> list[np.ndarray]:
+    """The words of a line that can show a slant: 3+ letters, not all
+    capitals or digits (the diagonals of A, V, 7 and "/" lean like italic:
+    "CAC vs CPA" and "(24/7)" came out italic)."""
+    return [m for m, t in zip(masks, texts)
+            if m.any() and sum(c.isalnum() for c in t) >= MIN_VOTE_LETTERS and not no_x_height(t)]
 
 
 def letters(picture: np.ndarray, run: dict, x0: float, x1: float, k: float, rows=None) -> np.ndarray:
@@ -392,13 +402,18 @@ def _split_by_weight(run: dict, spans: list, values: list[float | None]) -> list
 
 
 def _weigh_unknown(segments: list[dict], page) -> list[dict]:
-    """Text-layer runs in fonts that do not tell their weight (Canva's
-    "Unnamed-T3") take it from the page picture."""
+    """Text-layer runs in fonts that do not tell their weight or slant
+    (Canva's "Unnamed-T3") take both from the page picture."""
     if not any(r.get("weight_unknown") for seg in segments for r in seg["runs"]):
         return segments
     pix = page.get_pixmap(dpi=LAYOUT_BG_DPI, alpha=False)
     img = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
     k = LAYOUT_BG_DPI / 72
+    picture = np.asarray(img)
+    for r in (r for seg in segments for r in seg["runs"] if r.get("weight_unknown")):
+        spans = _word_spans(r)
+        r["italic"] = italic(slanted([letters(picture, r, x0, x1, k) for x0, x1, _, _ in spans],
+                                     [r["text"][start:end] for _, _, start, end in spans]))
     parts = iter(weigh_page([r for seg in segments for r in seg["runs"] if r.get("weight_unknown")], img, k))
     return [dict(seg, runs=[p for r in seg["runs"] for p in (next(parts) if r.get("weight_unknown") else [r])])
             for seg in segments]

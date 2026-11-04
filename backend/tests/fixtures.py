@@ -396,6 +396,7 @@ def canva_lesson_pdf(directory: Path, name: str = "lesson.pdf") -> Path:
 
 DEJAVU_SERIF = "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf"
 DEJAVU_SERIF_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
+DEJAVU_SERIF_ITALIC = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf"
 # Slide 1 of notebook_slides_pdf, in points of its 1376 x 768 pages
 NOTE_TITLE = "Розробка бізнес-моделі"            # bold serif, red
 NOTE_LOGO = (40, 30, 130, 120)                  # four black diamonds
@@ -403,6 +404,7 @@ NOTE_ICON = (1230, 40, 1320, 130)               # a target: three rings
 NOTE_RULE = (40, 220, 900, 224)                 # a thin red line under the title
 NOTE_BOX = (700, 590, 1320, 720)                # an orange box with regular serif text
 NOTE_BOX_TEXT = "Підготував студент групи"
+NOTE_ITALIC = "Саме на цій групі перевіряються гіпотези"   # serif italic, under the table
 NOTE_TABLE = (40, 290, 1320, 530)               # three columns, a header row
 NOTE_COLUMNS = (40, 470, 900, 1320)             # x of the table's vertical lines
 NOTE_HEADER = ["Проблема клієнта", "Альтернативи", "Недоліки"]           # bold serif
@@ -462,6 +464,7 @@ def notebook_slides_pdf(directory: Path, name: str = "notebook.pdf") -> Path:
         if n == 0:          # the first cell's text ends 8 pt before the line
             x = NOTE_COLUMNS[1] - 8 - d.textlength(cell, font=body) / k
         d.text((k * x, k * 420), cell, font=body, fill="black")
+    d.text((k * 40, k * 545), NOTE_ITALIC, font=font(DEJAVU_SERIF_ITALIC, 24), fill="black")
     d.rectangle([k * v for v in NOTE_BOX], fill=(250, 220, 195))
     d.text((k * (NOTE_BOX[0] + 30), k * (NOTE_BOX[1] + 45)), NOTE_BOX_TEXT, font=font(DEJAVU_SERIF, 26), fill="black")
     put(img)

@@ -183,3 +183,13 @@ def test_white_text_on_a_coloured_button_stays_white(api, files):
     runs = [r for b in text_boxes(prs.slides[1]) for p in b.text_frame.paragraphs for r in p.runs
             if fx.NOTE_BUTTON_TEXT in r.text]
     assert runs and all(min(r.font.color.rgb) > 230 for r in runs), [str(r.font.color.rgb) for r in runs]
+
+
+@needs_tesseract
+def test_italic_text_stays_italic(api, files):
+    _, data = api.roundtrip(fx.notebook_slides_pdf(files), "pptx-ocr")
+    prs = slides_of(data)
+    runs = [r for b in text_boxes(prs.slides[0]) for p in b.text_frame.paragraphs for r in p.runs if r.text.strip()]
+    slanted = {r.text.strip(): bool(r.font.italic) for r in runs}
+    assert any(t in fx.NOTE_ITALIC and v for t, v in slanted.items()), slanted
+    assert not any(v for t, v in slanted.items() if t not in fx.NOTE_ITALIC), slanted

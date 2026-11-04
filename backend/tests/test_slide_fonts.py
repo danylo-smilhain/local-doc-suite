@@ -229,3 +229,22 @@ def test_a_word_near_the_threshold_goes_with_its_line(sf):
     assert sf.line_bolds([0.59, 0.9, 0.85, 0.95], "serif", False) == [True] * 4
     assert sf.line_bolds([0.64, 0.3, 0.2, 0.1], "serif", False) == [False] * 4
     assert sf.line_bolds([0.64], "serif", False) == [False]          # alone: the threshold decides
+
+
+ITALICS = {False: [DV + "DejaVuSans.ttf", DV + "DejaVuSerif.ttf", LIB + "LiberationSerif-Regular.ttf",
+                   LIB + "LiberationSans-Bold.ttf"],
+           True: [DV + "DejaVuSans-Oblique.ttf", DV + "DejaVuSerif-Italic.ttf", LIB + "LiberationSerif-Italic.ttf",
+                  LIB + "LiberationSans-Italic.ttf", LIB + "LiberationSerif-BoldItalic.ttf"]}
+
+
+@pytest.mark.parametrize("italic", [False, True])
+@pytest.mark.parametrize("px", [30, 45, 66])
+def test_italic_is_seen_in_the_slant_of_the_strokes(sf, italic, px):
+    """Upright fonts measure -0.03 to 0.02, italic and oblique 0.16 to 0.20."""
+    for path in ITALICS[italic]:
+        masks = [word(sf, w, path, px) for w in "Саме на цій групі перевіряються гіпотези".split() if len(w) >= 3]
+        assert sf.italic(masks) == italic, path
+
+
+def test_no_words_are_not_italic(sf):
+    assert not sf.italic([])
