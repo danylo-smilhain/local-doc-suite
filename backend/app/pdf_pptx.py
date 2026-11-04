@@ -38,6 +38,7 @@ from app.pdf_layout import (_FONT_FAMILIES, LAYOUT_BG_DPI, LAYOUT_GFX_CLUSTER_GA
                             _rotated_text_rects, _text_decorations, _vector_table_primitives, _xy_cut)
 from app.pdf_text import repair_pdf_tounicode
 from app.slide_ocr import lines_of, read_slide_words
+from app.slide_raster import split_picture
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,10 @@ BOLD_STROKE_EM = 0.11
 MIN_WEIGH_PX = 20
 # An OCR line with at least this many letters takes its size from its width.
 LINE_SIZE_MIN_LETTERS = 4
+# A recognised word is painted out of the slide picture this many times its
+# box height beyond its box: the passes' boxes are a few pixels off the
+# letters, and the edges left over became scraps of pictures.
+WORD_MARGIN = 0.1
 
 
 def slide_size(width_pt: float, height_pt: float) -> tuple[int, int]:
@@ -165,7 +170,9 @@ def _ocr_page(page, lang: str, scan: bool) -> PageContent:
     photos and screenshots belong to those pictures and are left there.
     Only the pixels of the remaining words are painted over (as Word does
     for scans), so text OCR missed stays visible; with nothing recognised
-    the page stays a picture."""
+    no text is painted over. What is left is split as a drawn slide is: a
+    locked backdrop and logos, icons, lines, blocks and photos as pictures
+    of their own (slide_raster.split_picture)."""
     dpi = ocr_dpi(page.rect.width, page.rect.height)
     full = page.get_pixmap(dpi=dpi, alpha=False)
     full_img = Image.frombytes("RGB", (full.width, full.height), full.samples)
@@ -177,12 +184,27 @@ def _ocr_page(page, lang: str, scan: bool) -> PageContent:
     if not scan and page.get_images(full=True):
         drawn = without_pictures(page, dpi)
         words = [w for w in words if has_letters(drawn, w[:4])]
-    runs = (_ocr_line_run(line, 72.0 / dpi) for line in lines_of(words, np.asarray(full_img)))
+    # a line without a letter or a digit is a drawing OCR took for text (a
+    # target read as "©"); it stays in the picture
+    lines = [ln for ln in lines_of(words, np.asarray(full_img)) if any(c.isalnum() for w in ln for c in w.text)]
+    words = [w for ln in lines for w in ln]
+    runs = (_ocr_line_run(line, 72.0 / dpi) for line in lines)
     segments = [{"runs": [run]} for run in runs if run]
-    if not ocr_found_text(segments):
-        return PageContent(full_img, [], False, False)
-    return PageContent(_inpaint_boxes(full_img, [w[:4] for w in words]),
-                       style_ocr_segments(segments, 72.0 / dpi, full_img), False, True)
+    found = ocr_found_text(segments)
+    clean = _inpaint_boxes(full_img, [word_ink_box(w) for w in words]) if found else full_img
+    segments = style_ocr_segments(segments, 72.0 / dpi, full_img) if found else []
+    objects = split_picture(clean, 72.0 / dpi, 72.0 / SLIDE_DPI)
+    if objects is None:
+        return PageContent(clean, segments, False, found)
+    return PageContent(None, segments, False, found, objects)
+
+
+def word_ink_box(word) -> tuple[float, float, float, float]:
+    """The pixels to paint out for a recognised word: its box and a margin
+    in proportion to its height, for the letters' edges the box misses."""
+    x0, y0, x1, y1 = word[:4]
+    m = WORD_MARGIN * (y1 - y0)
+    return x0 - m, y0 - m, x1 + m, y1 + m
 
 
 def without_pictures(page, dpi: int) -> Image.Image:

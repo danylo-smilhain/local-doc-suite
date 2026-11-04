@@ -81,13 +81,10 @@ def test_only_what_ocr_recognised_leaves_the_background(api, files):
     """Recognised words become text boxes and leave the picture; a mark OCR
     could not read (here the square over "Clean") stays visible, so no
     text is lost from the slide."""
-    import io
-
-    from PIL import Image
-    from test_pdf_to_pptx import pictures, slides_of
+    from test_pdf_to_pptx import seen, slides_of
     _, data = api.roundtrip(fx.garbled_text_pdf(files), "pptx-ocr")
     prs = slides_of(data)
-    bg = Image.open(io.BytesIO(pictures(prs.slides[0])[0].image.blob)).convert("L")
+    bg = seen(prs, prs.slides[0]).convert("L")
     s = bg.width / 1440
     heading = bg.crop((int(195 * s), int(62 * s), int(285 * s), int(84 * s)))
     square = bg.crop((int(121 * s), int(63 * s), int(131 * s), int(75 * s)))
@@ -99,15 +96,12 @@ def test_with_ocr_text_inside_a_photo_stays_in_the_photo(api, files):
     """On a damaged page the slide's own letters become text boxes, a white
     title over a photo included; a caption inside a photo or screenshot is
     part of that picture and stays there."""
-    import io
-
-    from PIL import Image
-    from test_pdf_to_pptx import pictures, slide_text, slides_of
+    from test_pdf_to_pptx import seen, slide_text, slides_of
     _, data = api.roundtrip(fx.garbled_text_pdf(files), "pptx-ocr")
     prs = slides_of(data)
     text = slide_text(prs.slides[0])
     assert "SUPPLIER" in text.upper() and "caption" not in text.lower()
     assert fx.OVERLAY_LINE in text                    # the slide's own white title on the photo
-    bg = Image.open(io.BytesIO(pictures(prs.slides[0])[0].image.blob)).convert("L")
+    bg = seen(prs, prs.slides[0]).convert("L")
     s = bg.width / 1440
     assert bg.crop((int(1120 * s), int(670 * s), int(1400 * s), int(710 * s))).getextrema()[0] < 60

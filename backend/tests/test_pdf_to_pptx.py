@@ -28,6 +28,21 @@ def pictures(slide):
     return [s for s in slide.shapes if s.shape_type == PICTURE]
 
 
+def seen(prs, slide):
+    """What the slide's pictures show together, bottom to top (its text left
+    out), at the size of its first picture."""
+    from PIL import Image
+    shapes = pictures(slide)
+    first = Image.open(io.BytesIO(shapes[0].image.blob))
+    k = first.width / prs.slide_width
+    out = Image.new("RGBA", (first.width, round(prs.slide_height * k)), "white")
+    for shape in shapes:
+        img = Image.open(io.BytesIO(shape.image.blob)).convert("RGBA")
+        img = img.resize((max(1, round(shape.width * k)), max(1, round(shape.height * k))))
+        out.alpha_composite(img, (round(shape.left * k), round(shape.top * k)))
+    return out.convert("RGB")
+
+
 def canva_like_pdf(directory, pages: int = 3):
     """16:9 pages (1440 x 810 pt) like a Canva presentation export: a coloured
     background, a big white bold title, a blue line of body text."""

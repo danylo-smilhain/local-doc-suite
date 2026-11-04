@@ -140,3 +140,15 @@ def test_words_whose_boxes_touch_stay_one_line(so):
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         assert len(so.lines_of(words, picture)) == 1
+
+
+def test_a_stroke_at_a_word_s_edge_is_no_line(so):
+    """Word boxes are a few pixels off: the upright of the last letter just
+    past its box is not a line between the words."""
+    W = so.Word
+    picture = _picture(width=400, height=80)
+    picture[5:75, 101:104] = 0                      # "Д"'s upright, 1 px past the box
+    words = [W(10, 5, 100, 75, "БРЕНД", 96), W(140, 5, 390, 75, "МЕНЕДЖМЕНТ", 96)]
+    assert len(so.lines_of(words, picture)) == 1
+    picture[5:75, 119:122] = 0                      # a line in the middle of the gap
+    assert len(so.lines_of(words, picture)) == 2

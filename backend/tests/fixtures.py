@@ -408,7 +408,7 @@ NOTE_COLUMNS = (40, 470, 900, 1320)             # x of the table's vertical line
 NOTE_HEADER = ["Проблема клієнта", "Альтернативи", "Недоліки"]           # bold serif
 NOTE_CELLS = ["Незручність і витрати", "Цифрові необанки", "Обмежена мережа"]  # regular serif
 # Slide 2: the same in a sans font
-NOTE_SANS_TITLE = "Схема бізнес-моделі"           # bold sans
+NOTE_SANS_TITLE = "Канали комунікації"           # bold sans
 NOTE_SANS_BODY = "Цифрова молодь та фахівці"      # regular sans
 NOTE_ARROW = (600, 400, 680, 520)                # a red chevron
 

@@ -51,6 +51,10 @@ MIN_LETTER_WIDTH = 0.15
 # lines, not one ("Незручність і витрати Цифрові необанки").
 WALL_SHARE = 0.8
 WALL_CONTRAST = 60
+# Only the middle of the gap is looked at, this many font sizes from each
+# word: the passes' word boxes are a few pixels off, and the upright of a
+# title's last "Д" taken for a line split "БРЕНД МЕНЕДЖМЕНТ".
+WALL_MARGIN_EM = 0.1
 # Tesseract reads a vertical line next to a word as "|" ("|відділень").
 RULE = "|"
 
@@ -136,7 +140,8 @@ def walled(picture: np.ndarray, last: Word, word: Word) -> bool:
     """Whether a line is drawn between two words of one baseline (picture:
     the slide as an RGB array): a column of the gap between them, over the
     height both words share, that stands out from the gap's colour."""
-    x0, x1 = int(np.ceil(last.x1)), int(word.x0)
+    margin = WALL_MARGIN_EM * max(last.y1 - last.y0, word.y1 - word.y0) / 0.72
+    x0, x1 = int(np.ceil(last.x1 + margin)), int(word.x0 - margin)
     y0, y1 = int(max(last.y0, word.y0)), int(np.ceil(min(last.y1, word.y1)))
     gap = picture[y0:y1, x0:x1].astype(int)
     if gap.size == 0:
