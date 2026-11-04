@@ -131,3 +131,50 @@ def test_an_object_takes_its_soft_edge_along(sr):
     pic = Image.open(io.BytesIO(logo["img"])).convert("RGBA")
     assert pic.getpixel((0, 30))[3] == 255                      # x 99: the edge, in the picture
     assert Image.open(io.BytesIO(back["img"])).convert("RGB").getpixel((99, 80)) == (255, 255, 255)
+
+
+def photo(w, h, seed=11):
+    """A photo with light patches as near white as the page (lamps, plates)."""
+    rnd = np.random.default_rng(seed)
+    a = rnd.integers(60, 200, (h, w, 3)).astype(np.uint8)
+    a[10:70, 10:110] = 238                        # enclosed light patch, a third of it
+    a[:15, w - 40:] = 240                         # light patch on the photo's edge
+    return Image.fromarray(a)
+
+
+def test_a_photo_with_light_patches_is_one_whole_picture(sr):
+    """Light parts of a photo are as near the page colour as its noise; they
+    must not be cut out of the photo, nor left behind in the backdrop."""
+    img, _ = page()
+    img.paste(photo(160, 120), (100, 40))
+    back, pic = sr.split_picture(img, 1.0, 1.0)
+    shot = Image.open(io.BytesIO(pic["img"]))
+    assert "transparency" not in shot.info and shot.mode in ("RGB", "P")
+    assert (pic["x"], pic["y"], pic["w"], pic["h"]) == (99, 39, 162, 122)
+    under = np.asarray(Image.open(io.BytesIO(back["img"])).convert("RGB"))[40:160, 100:260]
+    assert (under.min(axis=2) > 250).all()           # page colour all under the photo, its light parts too
+
+
+def test_a_hole_in_a_thing_goes_with_it(sr):
+    """What a ring or a letter encloses is part of it: moving it leaves
+    nothing of it behind."""
+    img, d = page(fill=(250, 220, 195))
+    d.ellipse((100, 40, 200, 140), fill="black")
+    d.ellipse((130, 70, 170, 110), fill=(245, 215, 190))       # its middle, near the page colour
+    _, ring = sr.split_picture(img, 1.0, 1.0)
+    pic = Image.open(io.BytesIO(ring["img"])).convert("RGBA")
+    assert pic.getpixel((51, 51))[3] == 255
+
+
+def test_what_a_cut_out_picture_hides_is_not_stored(sr):
+    """An L of thin lines around a photo that is a picture of its own: the
+    line's transparent pixels keep no colour of the photo under them (they
+    cost megabytes), only the page colour its edges blend with."""
+    img, d = page(800, 400)
+    d.rectangle((50, 50, 750, 54), fill="black")
+    d.rectangle((746, 50, 750, 350), fill="black")
+    img.paste(photo(300, 180), (100, 150))
+    line = max(sr.split_picture(img, 1.0, 1.0)[1:], key=lambda o: o["w"] * o["h"] if o["h"] > 200 else 0)
+    rgba = Image.open(io.BytesIO(line["img"])).convert("RGBA")
+    hidden = {p[:3] for p in rgba.getdata() if p[3] == 0}
+    assert hidden == {(255, 255, 255)}

@@ -18,7 +18,7 @@ import io
 from collections import deque
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from app.pdf_layout import LAYOUT_SCAN_COVER, _image_bytes, _inpaint_boxes
 
@@ -39,8 +39,13 @@ PAGE_COLOUR_SHARE = 0.3
 # (dust, JPEG noise): what is left of a letter just outside its word box
 # (9 x 1 pt) is no object, a thin long line is.
 MIN_INK_PT = 5
-# A picture this opaque is stored without transparency (as _pieces does).
-OPAQUE_PIECE = 0.9
+# An object covering this share of its box with its pixels and what they
+# enclose is stored as its whole box, without transparency: a photo's light
+# parts (lamps, plates) are as near the page colour as its noise and were
+# cut out of it, megabytes of transparent PNG with pieces of the photo left
+# behind in the backdrop. A logo or an icon with room around it stays cut
+# out: a circle covers 0.79 of its box.
+SOLID_PIECE = 0.85
 
 
 def page_colour(a: np.ndarray, where: np.ndarray | None = None) -> tuple[np.ndarray, float]:
@@ -105,8 +110,7 @@ def objects_of(ink: np.ndarray, gap_px: int, min_ink: int) -> list[np.ndarray]:
     out = []
     for n in range(1, count + 1):
         mask = pixels == n
-        ys, xs = np.nonzero(mask)
-        if len(xs) >= max(1, min_ink):
+        if mask.sum() >= max(1, min_ink):
             out.append(mask)
     return out
 
@@ -124,12 +128,12 @@ def spans_slide(mask: np.ndarray) -> bool:
 
 
 def things_on(rgb: np.ndarray, colour: np.ndarray, region: np.ndarray, sizes: tuple[int, int],
-              nested: bool) -> list[np.ndarray]:
-    """The objects lying on one colour of the backdrop (in region): ink that
-    differs from it, grouped (objects_of). A fill as big as a page colour is
-    backdrop too; once (nested) the things on it are looked for against its
-    own colour. Frames and textures across the slide stay backdrop. sizes:
-    objects_of's gap and least ink, in pixels."""
+              nested: bool) -> list[tuple[np.ndarray, np.ndarray]]:
+    """The objects lying on one colour of the backdrop (in region), each with
+    that colour: ink that differs from it, grouped (objects_of). A fill as
+    big as a page colour is backdrop too; once (nested) the things on it are
+    looked for against its own colour. Frames and textures across the slide
+    stay backdrop. sizes: objects_of's gap and least ink, in pixels."""
     ink = region & (np.abs(rgb.astype(int) - colour).max(axis=2) > INK_CONTRAST)
     out = []
     for mask in objects_of(ink, *sizes):
@@ -138,18 +142,34 @@ def things_on(rgb: np.ndarray, colour: np.ndarray, region: np.ndarray, sizes: tu
                 fill, _ = page_colour(rgb, mask)
                 out += things_on(rgb, fill, mask, sizes, nested=False)
         elif not spans_slide(mask):
-            out.append(mask)
+            out.append((mask, colour))
     return out
 
 
-def _picture(rgb: np.ndarray, mask: np.ndarray, box, size: tuple[int, int]) -> bytes:
-    """One object as an image: its own pixels, transparent around them unless
-    it is nearly all opaque (a photo, a block: stored flat, much smaller)."""
+def shape_of(mask: np.ndarray, box) -> np.ndarray:
+    """What an object covers within its box: its pixels with their soft edge
+    and every hole they enclose (a ring's middle, a letter's counter, the
+    light parts of a photo); its whole box when that is most of it."""
     x0, y0, x1, y1 = box
-    alpha = _grow(mask)[y0:y1, x0:x1]
+    local = np.pad(_grow(mask)[y0:y1, x0:x1], 1)
+    img = Image.fromarray(local.astype(np.uint8) * 255).copy()     # fromarray is read-only: no fill
+    ImageDraw.floodfill(img, (0, 0), 128)
+    shape = (np.asarray(img) != 128)[1:-1, 1:-1]
+    return np.ones_like(shape) if shape.mean() >= SOLID_PIECE else shape
+
+
+def _picture(rgb: np.ndarray, shape: np.ndarray, box, size: tuple[int, int], colour: np.ndarray) -> bytes:
+    """One object as an image: what it covers (shape_of), transparent
+    around it unless that is its whole box (stored flat, much smaller).
+    Its transparent pixels hold the page colour, not what lies under them
+    (another picture's pixels were megabytes of noise); scaled down, its
+    edges blend with the colour they had on the slide."""
+    x0, y0, x1, y1 = box
+    alpha = shape
     part = Image.fromarray(rgb[y0:y1, x0:x1])
-    if alpha.mean() >= OPAQUE_PIECE:
+    if alpha.all():
         return _image_bytes(part.resize(size, Image.LANCZOS) if size != part.size else part)
+    part = Image.fromarray(np.where(alpha[:, :, None], rgb[y0:y1, x0:x1], colour.astype(np.uint8)))
     rgba = part.convert("RGBA")
     rgba.putalpha(Image.fromarray(alpha.astype(np.uint8) * 255))
     if size != rgba.size:
@@ -171,23 +191,24 @@ def split_picture(img: Image.Image, scale_pt: float, out_scale_pt: float) -> lis
         return None
     h, w = rgb.shape[:2]
     sizes = (round(OBJECT_GAP_PT / scale_pt), round((MIN_INK_PT / scale_pt) ** 2))
-    masks = things_on(rgb, colour, np.ones((h, w), bool), sizes, nested=True)
-    if not masks:
+    found = things_on(rgb, colour, np.ones((h, w), bool), sizes, nested=True)
+    if not found:
         return None
-    masks.sort(key=lambda m: (np.nonzero(m)[0].min(), np.nonzero(m)[1].min()))
+    found.sort(key=lambda mc: (np.nonzero(mc[0])[0].min(), np.nonzero(mc[0])[1].min()))
     shrink = min(1.0, scale_pt / out_scale_pt)
     objects, covered, boxes = [], np.zeros((h, w), bool), []
-    for n, mask in enumerate(masks, 1):
+    for n, (mask, under) in enumerate(found, 1):
         ys, xs = np.nonzero(mask)
         box = (max(0, xs.min() - 1), max(0, ys.min() - 1), min(w, xs.max() + 2), min(h, ys.max() + 2))
         size = (max(1, round((box[2] - box[0]) * shrink)), max(1, round((box[3] - box[1]) * shrink)))
-        objects.append({"kind": "pic", "img": _picture(rgb, mask, box, size), "name": f"Picture {n}",
+        shape = shape_of(mask, box)
+        objects.append({"kind": "pic", "img": _picture(rgb, shape, box, size, under), "name": f"Picture {n}",
                         "x": box[0] * scale_pt, "y": box[1] * scale_pt,
                         "w": (box[2] - box[0]) * scale_pt, "h": (box[3] - box[1]) * scale_pt})
-        covered |= _grow(mask)
+        covered[box[1]:box[3], box[0]:box[2]] |= shape
         boxes.append(box)
     # under each object the backdrop takes the colour around it, only where
-    # the object has pixels (as in _split_objects)
+    # the object covers it (as in _split_objects)
     filled = np.asarray(_inpaint_boxes(Image.fromarray(rgb), boxes))
     backdrop = Image.fromarray(np.where(covered[:, :, None], filled, rgb))
     if shrink < 1:
