@@ -281,3 +281,14 @@ def test_a_condensed_font_keeps_its_family(sf, fam, k):
         masks = [squeezed(sf, w, path, 66, k) for w in line.split() if len(w) >= 3]
         texts = [w for w in line.split() if len(w) >= 3]
         assert sf.family(masks, 66, texts) == fam, (line, k)
+
+
+def test_an_italic_line_takes_the_family_of_its_page(sf):
+    """Italic serif has no feet and leaner uprights: Gemini's measured as a
+    sans (contrast 1.3-1.55, feet 1.2-1.5). A deck sets its italic in the
+    family of its upright text."""
+    fams = ["serif", "serif", "sans", "serif", "sans"]
+    slanted = [False, False, False, True, True]
+    assert sf.page_families(fams, slanted) == ["serif", "serif", "sans", "serif", "serif"]
+    assert sf.page_families(["sans", "serif"], [True, True]) == ["sans", "serif"]       # nothing upright
+    assert sf.page_families(["serif", "sans", "serif"], [False, False, True]) == ["serif", "sans", "serif"]  # a tie

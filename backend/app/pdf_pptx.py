@@ -39,7 +39,7 @@ from app.pdf_layout import (LAYOUT_BG_DPI, LAYOUT_GFX_CLUSTER_GAP_PT, LAYOUT_MIN
 from app.pdf_text import repair_pdf_tounicode
 from app.slide_ocr import lines_of, read_slide_words
 from app.slide_fonts import (MIN_VOTE_LETTERS, boldness, family, font_name, ink, italic, line_bolds, no_x_height,
-                             relative_weight)
+                             page_families, relative_weight)
 from app.slide_raster import split_picture
 
 logger = logging.getLogger(__name__)
@@ -290,11 +290,13 @@ def style_ocr_segments(segments: list[dict], scale_pt: float, img: Image.Image,
                       and not no_x_height(text)] or [(text, m) for text, m in words if not no_x_height(text)]
             voters = [(text, m) for text, m in voters if m.any()]
             r["fam"] = family([m for _, m in voters], r["size"] * k, [text for text, _ in voters])
-            r["font"] = font_name(r["fam"])
             r["italic"] = italic(slanted([m for _, m in words], [t for t, _ in words]))
             crop = tuple(round(v) for v in box)
             r["color"] = text_colour(img.crop(crop), clean.crop(crop) if clean is not None else None)
-            r["size"] = line_size(r["text"], r["size"], r["x1"] - r["x0"], r["fam"])
+    every = [r for seg in segments for r in seg["runs"]]
+    for r, fam in zip(every, page_families([r["fam"] for r in every], [r["italic"] for r in every])):
+        r["fam"], r["font"] = fam, font_name(fam)
+        r["size"] = line_size(r["text"], r["size"], r["x1"] - r["x0"], fam)
     parts = iter(weigh_page([r for seg in segments for r in seg["runs"]], img, k))
     return [dict(seg, runs=[p for _ in seg["runs"] for p in next(parts)]) for seg in segments]
 

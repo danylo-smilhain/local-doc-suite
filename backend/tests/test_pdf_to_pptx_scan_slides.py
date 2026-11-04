@@ -193,3 +193,6 @@ def test_italic_text_stays_italic(api, files):
     slanted = {r.text.strip(): bool(r.font.italic) for r in runs}
     assert any(t in fx.NOTE_ITALIC and v for t, v in slanted.items()), slanted
     assert not any(v for t, v in slanted.items() if t not in fx.NOTE_ITALIC), slanted
+    # its strokes are measured stood upright: a regular serif, not a bold sans
+    looks_of = {(r.font.name, bool(r.font.bold)) for r in runs if r.text.strip() in fx.NOTE_ITALIC}
+    assert looks_of == {("Times New Roman", False)}, looks_of

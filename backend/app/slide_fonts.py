@@ -35,6 +35,9 @@ Glossary (all on a word's ink, the pixels of its letters):
 - slant: how far the strokes lean right per pixel of height, found as the
   shear that stands them upright (the sharpest columns of ink); upright
   fonts measure -0.03 to 0.02, italic and oblique 0.14 to 0.20;
+- an italic line's family: that of most of its page's upright lines (a
+  tie or none: its own); italic serif has no feet and leaner uprights
+  (Gemini's measured contrast 1.3-1.55, feet 1.2-1.5, as a sans);
 - a line's weights: a word within UNSURE of its threshold ("Схема", 0.59
   in a bold title) takes the weight most of its line's other words have;
   a word not measured (too short: "UA", "і", "–") that of its nearest
@@ -199,6 +202,15 @@ def slant(mask: np.ndarray) -> float:
 def italic(masks: list[np.ndarray]) -> bool:
     """Whether a line is italic, from the ink of its words."""
     return bool(masks) and float(np.median([slant(m) for m in masks])) >= ITALIC_SLANT
+
+
+def page_families(fams: list[str], slanted: list[bool]) -> list[str]:
+    """The family of each line of a page, its italic lines taking the one
+    most of its upright lines have (see the glossary)."""
+    upright = [f for f, s in zip(fams, slanted) if not s]
+    serif, sans = upright.count("serif"), upright.count("sans")
+    most = "serif" if serif > sans else "sans" if sans > serif else None
+    return [most if s and most else f for f, s in zip(fams, slanted)]
 
 
 def drawn(text: str, fam: str, bold: bool, height: int, whole: bool = False) -> np.ndarray:
