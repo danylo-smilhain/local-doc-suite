@@ -56,6 +56,31 @@ def text_pdf(directory: Path, name: str = "text.pdf", text: str = PDF_TEXT, page
     return path
 
 
+OUTLINED_BAND = (0, 255, 595, 588)   # x0, y0, x1, y1 in points, from the top
+
+
+def outlined_band_pdf(directory: Path, name: str = "band.pdf") -> Path:
+    """A text page with a dark band filled and then outlined by two separate
+    operators, each under its own clip, as PowerPoint writes it: MuPDF lists
+    this as one "fs" drawing, and as "f", clip, "s" in its extended list."""
+    import fitz
+    path = directory / name
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((72, 100), "Project description in ordinary body text.", fontsize=14)
+    page.insert_text((72, 700), "Study via case: a second paragraph of text.", fontsize=14)
+    x0, y0, x1, y1 = OUTLINED_BAND
+    band = f"{x0} {842 - y1} {x1 - x0} {y1 - y0} re"
+    clip = "q 0 0 595 842 re W* n"
+    paint = (f"{clip} 0.02 0.04 0.27 rg {band} f* Q "
+             f"{clip} 0.75 w 0.02 0.04 0.27 RG {band} S Q\n").encode()
+    xref = page.get_contents()[0]
+    doc.update_stream(xref, paint + doc.xref_stream(xref))
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
 def text_image(directory: Path, name: str = "scan.png", word: str = OCR_WORD) -> Path:
     from PIL import Image, ImageDraw
     path = directory / name

@@ -2132,11 +2132,11 @@ def _split_page_graphics(src, page, pno, prims, img_infos, clear, text_rects, ke
     if not hasattr(fitz, "PDF_REDACT_LINE_ART_REMOVE_IF_TOUCHED"):
         return _gfx_skip(pno, f"нужен PyMuPDF 1.24.2+, установлен {getattr(fitz, 'VersionBind', '?')}")
     segs, fills, others, meta = prims
-    ext = page.get_drawings(extended=True)
-    paint = [d for d in ext if d["type"] not in ("clip", "group")]
-    if len(paint) != len(meta):   # seq в prims — номер рисунка без clip/group
-        return _gfx_skip(pno, "список рисунков не сошёлся с prims")
-    clips = [d for d in ext if d["type"] == "clip"]
+    # seq в prims — номер в этом же списке. Расширенный список нужен только ради
+    # обрезок: в нём заливка и обводка одного контура, разделённые обрезкой
+    # (так пишет PowerPoint), — два рисунка, а в обычном — один «fs».
+    paint = page.get_drawings()
+    clips = [d for d in page.get_drawings(extended=True) if d["type"] == "clip"]
     clear = [fitz.Rect(c) for c in clear]
     w_pt, h_pt = page.rect.width, page.rect.height
 
