@@ -81,6 +81,36 @@ def outlined_band_pdf(directory: Path, name: str = "band.pdf") -> Path:
     return path
 
 
+OVAL_PHOTO = (380, 90, 520, 230)   # x0, y0, x1, y1 in points, from the top
+
+
+def oval_photo_pdf(directory: Path, name: str = "avatar.pdf") -> Path:
+    """A text page with a photo cropped by a circle, an avatar."""
+    import io
+
+    import fitz
+    from PIL import Image
+    path = directory / name
+    doc = fitz.open()
+    page = doc.new_page(width=595, height=842)
+    page.insert_text((72, 100), "Speaker: a short biography in body text.", fontsize=14)
+    page.insert_text((72, 300), "Second paragraph of ordinary body text.", fontsize=14)
+    photo = io.BytesIO()
+    Image.linear_gradient("L").convert("RGB").resize((140, 140)).save(photo, "JPEG")
+    page.insert_image(fitz.Rect(*OVAL_PHOTO), stream=photo.getvalue())
+    x0, y0, x1, y1 = OVAL_PHOTO
+    cx, cy, r, k = (x0 + x1) / 2, 842 - (y0 + y1) / 2, (x1 - x0) / 2, 0.5523 * (x1 - x0) / 2
+    circle = (f"{cx + r} {cy} m {cx + r} {cy + k} {cx + k} {cy + r} {cx} {cy + r} c "
+              f"{cx - k} {cy + r} {cx - r} {cy + k} {cx - r} {cy} c "
+              f"{cx - r} {cy - k} {cx - k} {cy - r} {cx} {cy - r} c "
+              f"{cx + k} {cy - r} {cx + r} {cy - k} {cx + r} {cy} c W n\n")
+    xref = next(x for x in page.get_contents() if b" Do" in doc.xref_stream(x))
+    doc.update_stream(xref, b"q " + circle.encode() + doc.xref_stream(xref) + b"\nQ")
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
 def text_image(directory: Path, name: str = "scan.png", word: str = OCR_WORD) -> Path:
     from PIL import Image, ImageDraw
     path = directory / name

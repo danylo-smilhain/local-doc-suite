@@ -43,3 +43,11 @@ def test_a_block_filled_and_outlined_separately_is_a_shape(api, files, target):
     assert body["engine"] == "layout"
     assert body["warnings"] == []
     assert any(near(box, fx.OUTLINED_BAND) for box in blocks_of(data)), blocks_of(data)
+
+
+@WORD_TOOLS
+def test_a_photo_cropped_by_a_circle_stays_round(api, files, target):
+    body, data = api.roundtrip(fx.oval_photo_pdf(files), target)
+    assert body["warnings"] == []
+    ovals = anchored(data, '<a:prstGeom prst="ellipse">')
+    assert any(near(box, fx.OVAL_PHOTO) for box in ovals), ovals
