@@ -55,7 +55,10 @@ DOCX, EPUB, FB2, MD or TXT.
 
 **Merging several files into one:** PDF + PDF → PDF; any supported inputs →
 PDF or DOCX; TXT → MD; EPUB → EPUB; FB2 → FB2; any text-readable inputs →
-TXT, MD or HTML.
+TXT, MD or HTML; XLSX → XLSX and XLS → XLS: every sheet of every file in
+one workbook, in upload order, with its formatting, formulas, images and
+charts; a sheet whose name is taken gets "Name (2)", and its file's formulas
+and charts follow the new name (openpyxl, XLS through LibreOffice).
 
 **Known limitation (OCR and look-alike letters):** OCR reads Ukrainian,
 Russian and English together. A word made only of letters that look the same
