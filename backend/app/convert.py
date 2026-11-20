@@ -404,14 +404,15 @@ def office_to_pdf(job: Job) -> None:
     shutil.move(pdf_res, job.out_path)
 
 
-def doc_to_docx(job: Job) -> None:
-    """Word 97-2003 -> DOCX straight through LibreOffice: it keeps fonts,
-    colours, tables and page layout (pandoc cannot read .doc at all)."""
+def office_by_libreoffice(job: Job) -> None:
+    """One office format to another straight through LibreOffice, which keeps
+    fonts, colours, tables and page layout: DOC -> DOCX (pandoc cannot read
+    .doc at all)."""
     # A private directory: two conversions of the same upload must not
     # overwrite each other's LibreOffice output (it is named after the input).
-    workdir = tempfile.mkdtemp(prefix="doc_docx_", dir=OUTPUT_DIR)
+    workdir = tempfile.mkdtemp(prefix="office_", dir=OUTPUT_DIR)
     try:
-        shutil.move(engine_libreoffice(job.in_path, workdir, "docx"), job.out_path)
+        shutil.move(engine_libreoffice(job.in_path, workdir, job.out_ext), job.out_path)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
 
@@ -476,7 +477,7 @@ SINGLE: dict[tuple[str, str], Handler] = {
     ("htm", "md"): html_to_md,
     ("html", "pdf"): html_to_pdf,
     ("htm", "pdf"): html_to_pdf,
-    ("doc", "docx"): doc_to_docx,
+    ("doc", "docx"): office_by_libreoffice,
     **{(src, "pdf"): office_to_pdf for src in sorted(LIBREOFFICE_PDF_SOURCES - {"html", "htm"})},
     **{(ext, target): image_to_text for ext in IMAGE_EXTS + RAW_EXTS for target in ("txt", "md")},
     ("mp4", "mp3"): video_mp3,

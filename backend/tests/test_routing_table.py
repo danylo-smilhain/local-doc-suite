@@ -18,7 +18,7 @@ def old_single(s, t, o, tg):
     # added after the refactor: DOC -> DOCX goes straight through LibreOffice
     # (it used to fall through to pandoc, which cannot read .doc)
     if s == "doc" and o == "docx":
-        return "doc_docx"
+        return "office_lo"
     if s == "pdf":
         if t in ("docx-ocr", "docx"): return "pdf_docx"
         if t in ("txt", "md"): return "pdf_text"
@@ -82,7 +82,7 @@ def NEW(c):
            c.merge_pdfs: "pdf_merger", c.merge_into_pdf: "merge_to_pdf", c.merge_into_docx: "merge_docx",
            c.merge_txt_to_md: "txt_md_merge", c.merge_books: "books", c.merge_as_text: "text",
            c.merge_concat_then_pandoc: "concat",
-            c.image_to_text: "image_text", c.doc_to_docx: "doc_docx",
+            c.image_to_text: "image_text", c.office_by_libreoffice: "office_lo",
             c.kindle_to_azw3: "kindle_azw3", c.azw3_target_unsupported: "azw3_target_unsupported",
             c.video_webm: "video_webm", c.pdf_pptx: "pdf_pptx", c.webm_target_unsupported: "webm_target_unsupported",
             c.merge_xlsx: "sheets_xlsx", c.merge_xls: "sheets_xls"}
