@@ -812,3 +812,61 @@ def docx_rich(directory: Path, name: str = "rich.docx", without_pages: bool = Fa
                 zout.writestr(item, data)
         path.write_bytes(out.getvalue())
     return path
+
+
+def workbook(directory: Path, name: str, sheets: dict[str, list[list]]) -> Path:
+    """An .xlsx with the given sheets in order: {title: rows}."""
+    from openpyxl import Workbook
+    path = directory / name
+    wb = Workbook()
+    wb.remove(wb.active)
+    for title, rows in sheets.items():
+        ws = wb.create_sheet(title)
+        for row in rows:
+            ws.append(row)
+    wb.save(str(path))
+    return path
+
+
+def styled_workbook(directory: Path, name: str = "styled.xlsx") -> Path:
+    """One sheet "Report" with what a table is more than its values:
+    a bold red header on yellow, a money format, a wide column, a tall row,
+    a merged title, frozen panes, a hidden column and a tab colour."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    path = directory / name
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Report"
+    ws["A1"] = "Quarter report"
+    ws.merge_cells("A1:C1")
+    ws.append(["Item", "Price", "Note"])
+    ws.append(["Tea", 12.5, "hidden note"])
+    for cell in ws[2]:
+        cell.font = Font(bold=True, color="FFFF0000")
+        cell.fill = PatternFill("solid", fgColor="FFFFFF00")
+    ws["B3"].number_format = '#,##0.00 "UAH"'
+    ws.column_dimensions["A"].width = 30
+    ws.column_dimensions["C"].hidden = True
+    ws.row_dimensions[2].height = 40
+    ws.freeze_panes = "A3"
+    ws.sheet_properties.tabColor = "FF00B050"
+    wb.save(str(path))
+    return path
+
+
+def chart_workbook(directory: Path, name: str = "chart.xlsx", title: str = "Sheet1") -> Path:
+    """One sheet with numbers in A1:A3 and a bar chart drawn from them."""
+    from openpyxl import Workbook
+    from openpyxl.chart import BarChart, Reference
+    path = directory / name
+    wb = Workbook()
+    ws = wb.active
+    ws.title = title
+    for v in (3, 5, 8):
+        ws.append([v])
+    chart = BarChart()
+    chart.add_data(Reference(ws, min_col=1, min_row=1, max_row=3))
+    ws.add_chart(chart, "C2")
+    wb.save(str(path))
+    return path

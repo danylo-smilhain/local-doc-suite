@@ -72,6 +72,8 @@ class TargetFormat(str, Enum):
     MP3 = "mp3"
     MP4 = "mp4"
     WEBM = "webm"
+    XLSX = "xlsx"
+    XLS = "xls"
 
     @property
     def out_ext(self) -> str:

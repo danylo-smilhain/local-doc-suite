@@ -50,6 +50,8 @@ def old_single(s, t, o, tg):
     return "pandoc"
 
 def old_merge(s, o):
+    # added after the refactor: spreadsheets merge sheet by sheet, each format into itself
+    if s == "xlsx" and o == "xlsx": return "sheets_xlsx"
     if o == "pdf": return "pdf_merger" if s == "pdf" else "merge_to_pdf"
     if o == "docx": return "merge_docx"
     if s == "txt" and o == "md": return "txt_md_merge"
@@ -81,7 +83,8 @@ def NEW(c):
            c.merge_concat_then_pandoc: "concat",
             c.image_to_text: "image_text", c.doc_to_docx: "doc_docx",
             c.kindle_to_azw3: "kindle_azw3", c.azw3_target_unsupported: "azw3_target_unsupported",
-            c.video_webm: "video_webm", c.pdf_pptx: "pdf_pptx", c.webm_target_unsupported: "webm_target_unsupported"}
+            c.video_webm: "video_webm", c.pdf_pptx: "pdf_pptx", c.webm_target_unsupported: "webm_target_unsupported",
+            c.merge_xlsx: "sheets_xlsx"}
 
 
 PAIRS = [(s.value, t) for s in SourceExt for t in TargetFormat]

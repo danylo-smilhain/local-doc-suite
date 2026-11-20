@@ -36,6 +36,7 @@ from app.errors import DependencyMissing, EbookInputError, ErrorCode
 from app.media import video_to_mp3, video_to_mp4, video_to_webm
 from app.pdf_pptx import pdf_to_pptx
 from app.merge import convert_to_text_format, merge_docx, merge_to_pdf
+from app.sheets import merge_workbooks
 from app.ocr import _ocr_png, available_ocr_lang, extract_pdf_text_cached, pdf_text_layer_is_broken
 from app.pdf_flow import (
     ocrmypdf_available,
@@ -549,6 +550,10 @@ def merge_as_text(job: Job) -> None:
         f.write("\n\n".join(x for x in parts if x) + "\n")
 
 
+def merge_xlsx(job: Job) -> None:
+    merge_workbooks(job.in_paths, job.out_path)
+
+
 def merge_concat_then_pandoc(job: Job) -> None:
     temp_txt = _tmp("temp", "txt")
     with open(temp_txt, "w", encoding="utf-8") as f:
@@ -568,6 +573,7 @@ MERGE: dict[tuple[str, str], Handler] = {
     (ANY, "txt"): merge_as_text,
     (ANY, "md"): merge_as_text,
     (ANY, "html"): merge_as_text,
+    ("xlsx", "xlsx"): merge_xlsx,
 }
 
 
