@@ -4,8 +4,6 @@ import os
 import shutil
 import uuid
 
-from docx import Document
-from docxcompose.composer import Composer
 from pypdf import PdfWriter
 
 from app.config import OUTPUT_DIR
@@ -75,16 +73,6 @@ def convert_to_text_format(in_path: str, source_ext: str, target_ext: str,
         text, _ = read_text_file(in_path)
         return text.strip()
     return _pandoc_as_text(in_path, source_ext, target_ext, part_no)
-
-def merge_docx(files, out_path):
-    master = Document(files[0])
-    composer = Composer(master)
-    for f in files[1:]:
-        master.add_page_break()
-        sub_doc = Document(f)
-        composer.append(sub_doc)
-    composer.save(out_path)
-
 
 def _remove_all(paths) -> None:
     for tmp in paths:

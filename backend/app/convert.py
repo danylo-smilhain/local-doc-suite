@@ -35,8 +35,9 @@ from app.engines import LIBREOFFICE_PDF_SOURCES, engine_libreoffice, engine_pand
 from app.errors import DependencyMissing, EbookInputError, ErrorCode
 from app.media import video_to_mp3, video_to_mp4, video_to_webm
 from app.pdf_pptx import pdf_to_pptx
-from app.merge import convert_to_text_format, merge_docx, merge_to_pdf
+from app.merge import convert_to_text_format, merge_to_pdf
 from app.sheets import merge_workbooks
+from app.word_merge import merge_docx
 from app.ocr import _ocr_png, available_ocr_lang, extract_pdf_text_cached, pdf_text_layer_is_broken
 from app.pdf_flow import (
     ocrmypdf_available,

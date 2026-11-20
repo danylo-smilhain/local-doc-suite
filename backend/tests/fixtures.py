@@ -893,3 +893,107 @@ def chart_workbook(directory: Path, name: str = "chart.xlsx", title: str = "Shee
     ws.add_chart(chart, "C2")
     wb.save(str(path))
     return path
+
+
+WORD_LOOKS = {
+    # a coursework report: Times 14, 1.5 lines, justified, indented, Word's defaults
+    "report": {"font": "Times New Roman", "size": 14, "align": "both", "indent": 709,
+               "spacing": 'w:after="0" w:line="360" w:lineRule="auto"',
+               "default_ppr": '<w:spacing w:after="160" w:line="259" w:lineRule="auto"/>', "default_rpr": "",
+               "theme_fonts": True, "header": None, "starts": "continuous",
+               "margins": (850, 850, 850, 1417), "landscape": False,
+               "note": ("Report note", '<w:i/><w:sz w:val="32"/>'), "plain_cell_margin": 108},
+    # a form: Arial 11, left, no first-line indent, narrow margins, landscape; Normal sets
+    # only the line spacing: the space below is what Word assumes (none), the dark blue
+    # and the left indent come from the form's defaults;
+    # its defaults name no font
+    "form": {"font": "Arial", "size": 11, "align": "left", "indent": 0,
+             "spacing": 'w:line="276" w:lineRule="auto"', "default_ppr": '<w:ind w:left="360"/>',
+             "default_rpr": '<w:b/><w:color w:val="1F3864"/>', "theme_fonts": False, "header": "Form header",
+             "margins": (426, 851, 567, 992), "landscape": True,
+             "note": ("Form note", '<w:b/><w:color w:val="C00000"/><w:sz w:val="18"/>'), "plain_cell_margin": 400},
+}
+
+
+def word_look(directory: Path, name: str, look: str, words: str, local_ids: bool = False) -> Path:
+    """A .docx whose look lives where Word keeps it: the Normal style, the
+    document defaults and the page setup, given by WORD_LOOKS[look]. Text:
+    three long paragraphs made of words with a heading after the first, so wrapping, line
+    spacing, indents and alignment show, a signature on the right and a table
+    with wide cell margins. local_ids: style ids as a Ukrainian Word writes
+    them (Normal is "a") and a style "Quote note" based on it."""
+    from docx import Document
+    from docx.enum.section import WD_ORIENT, WD_SECTION
+    from docx.oxml import parse_xml
+    from docx.oxml.ns import nsdecls, qn
+    from docx.shared import Pt, Twips
+    v = WORD_LOOKS[look]
+    doc = Document()
+    styles = doc.styles.element
+    defaults = styles.find(qn("w:docDefaults"))
+    p_default = defaults.find(qn("w:pPrDefault"))
+    if p_default is not None:
+        defaults.remove(p_default)
+    defaults.append(parse_xml(f'<w:pPrDefault {nsdecls("w")}><w:pPr>{v["default_ppr"]}</w:pPr></w:pPrDefault>'))
+    size = defaults.find(f'{qn("w:rPrDefault")}/{qn("w:rPr")}/{qn("w:sz")}')
+    for extra in parse_xml(f'<w:rPr {nsdecls("w")}>{v["default_rpr"]}</w:rPr>'):
+        size.addprevious(extra)
+    fonts = defaults.find(f'{qn("w:rPrDefault")}/{qn("w:rPr")}/{qn("w:rFonts")}')
+    if v["theme_fonts"]:        # as Word writes them
+        for slot, theme in (("asciiTheme", "minorHAnsi"), ("hAnsiTheme", "minorHAnsi"),
+                            ("eastAsiaTheme", "minorHAnsi"), ("cstheme", "minorBidi")):
+            fonts.set(qn("w:" + slot), theme)
+    else:                       # LibreOffice files often name no default font
+        fonts.getparent().remove(fonts)
+    normal = doc.styles["Normal"]
+    normal.font.name, normal.font.size = v["font"], Pt(v["size"])
+    normal.element.rPr.rFonts.set(qn("w:cs"), v["font"])
+    normal.element.get_or_add_pPr().append(parse_xml(f'<w:spacing {nsdecls("w")} {v["spacing"]}/>'))
+    normal.paragraph_format.first_line_indent = Twips(v["indent"])
+    normal.element.pPr.append(parse_xml(f'<w:jc {nsdecls("w")} w:val="{v["align"]}"/>'))
+    section = doc.sections[0]
+    if v["landscape"]:
+        section.orientation = WD_ORIENT.LANDSCAPE
+        section.page_width, section.page_height = section.page_height, section.page_width
+    section.top_margin, section.right_margin, section.bottom_margin, section.left_margin = map(Twips, v["margins"])
+    if v.get("starts") == "continuous":      # how its only section starts says nothing alone
+        section.start_type = WD_SECTION.CONTINUOUS
+    if v.get("header"):
+        section.header.paragraphs[0].text = v["header"]
+    for n in range(3):
+        doc.add_paragraph(" ".join([f"{w}{n}" for w in words.split()] * 6))
+        if n == 0:      # not first: space above a page's first line is a document-wide setting
+            doc.add_heading(f"{words.split()[0].title()} section", level=1)
+    signed = doc.add_paragraph(f"AVAWAY Today: {words.split()[1]}")
+    signed.paragraph_format.left_indent = Twips(5670)
+    signed._p.pPr.append(parse_xml(f'<w:jc {nsdecls("w")} w:val="right"/>'))
+    table = doc.add_table(rows=2, cols=3)
+    table.style = doc.styles["Table Grid"]
+    table._tbl.tblPr.append(parse_xml(f'<w:tblCellMar {nsdecls("w")}><w:left w:w="170" w:type="dxa"/>'
+                                      '<w:right w:w="57" w:type="dxa"/></w:tblCellMar>'))
+    for n, cell in enumerate(table._cells):
+        cell.text = f"{words.split()[n % 6]}{n}"
+    # a style both files call "Note" by id, each by its own name and look (ids are
+    # Word's language-specific short names, so files of different Words share them)
+    label, look_xml = v["note"]
+    styles.append(parse_xml(f'<w:style {nsdecls("w")} w:type="paragraph" w:customStyle="1" w:styleId="Note">'
+                            f'<w:name w:val="{label}"/><w:basedOn w:val="Normal"/><w:rPr>{look_xml}</w:rPr></w:style>'))
+    doc.add_paragraph(f"{label}: {words.split()[2]} {words.split()[3]}", style=label)
+    # a table with no style takes the default table style, whose cell margins differ
+    plain = styles.find(f'{qn("w:style")}[@{qn("w:styleId")}="TableNormal"]')
+    plain.find(f'{qn("w:tblPr")}/{qn("w:tblCellMar")}/{qn("w:left")}').set(qn("w:w"), str(v["plain_cell_margin"]))
+    bare = doc.add_table(rows=1, cols=2)
+    for own_style in bare._tbl.tblPr.findall(qn("w:tblStyle")):
+        bare._tbl.tblPr.remove(own_style)
+    bare.cell(0, 0).text, bare.cell(0, 1).text = f"{words.split()[4]}!", f"{words.split()[5]}!"
+    if local_ids:
+        for ref in styles.iter(qn("w:basedOn"), qn("w:next"), qn("w:link")):
+            if ref.get(qn("w:val")) == "Normal":
+                ref.set(qn("w:val"), "a")
+        doc.styles["Normal"].element.set(qn("w:styleId"), "a")
+        styles.append(parse_xml(f'<w:style {nsdecls("w")} w:type="paragraph" w:customStyle="1" w:styleId="QuoteNote">'
+                                '<w:name w:val="Quote note"/><w:basedOn w:val="a"/><w:rPr><w:i/></w:rPr></w:style>'))
+        doc.add_paragraph(f"{words.split()[1]} quoted", style="Quote note")
+    path = directory / name
+    doc.save(str(path))
+    return path
