@@ -49,6 +49,7 @@ const yo = {
     'word-to-fb2': { t: "Word sí FB2", d: "Yí DOCX padà sí FB2." },
     'word-to-pdf': { t: "Word sí PDF", d: "Yí DOCX padà sí PDF." },
     'doc-to-docx': { t: "DOC sí DOCX", d: "Yí DOC padà sí DOCX." },
+    'xlsx-to-xls': { t: 'XLSX sí XLS', d: 'Yí XLSX padà sí XLS.' },
     'epub-to-pdf': { t: "EPUB sí PDF", d: "Yí ìwé-ẹ̀rọ EPUB padà sí PDF." },
     'epub-to-md': { t: "EPUB sí Markdown", d: "Yí ìwé-ẹ̀rọ EPUB padà sí MD." },
     'fb2-to-pdf': { t: "FB2 sí PDF", d: "Yí ìwé-ẹ̀rọ FB2 padà sí PDF." },

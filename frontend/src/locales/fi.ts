@@ -49,6 +49,7 @@ const fi = {
     'word-to-fb2': { t: "Word → FB2", d: "Muunna DOCX FB2-muotoon." },
     'word-to-pdf': { t: "Word → PDF", d: "Muunna DOCX PDF-muotoon." },
     'doc-to-docx': { t: "DOC → DOCX", d: "Muunna DOC DOCX-muotoon." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'Muunna XLSX XLS-muotoon.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "Muunna EPUB-e-kirjat PDF-muotoon." },
     'epub-to-md': { t: "EPUB → Markdown", d: "Muunna EPUB-e-kirjat MD-asiakirjaksi." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "Muunna FB2-e-kirjat PDF-muotoon." },

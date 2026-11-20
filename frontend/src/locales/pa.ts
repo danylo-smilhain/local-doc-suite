@@ -49,6 +49,7 @@ const pa = {
     'word-to-fb2': { t: "Word ਤੋਂ FB2", d: "DOCX ਨੂੰ FB2 ਵਿੱਚ ਬਦਲੋ।" },
     'word-to-pdf': { t: "Word ਤੋਂ PDF", d: "DOCX ਨੂੰ PDF ਵਿੱਚ ਬਦਲੋ।" },
     'doc-to-docx': { t: "DOC ਤੋਂ DOCX", d: "DOC ਨੂੰ DOCX ਵਿੱਚ ਬਦਲੋ।" },
+    'xlsx-to-xls': { t: 'XLSX ਤੋਂ XLS', d: 'XLSX ਨੂੰ XLS ਵਿੱਚ ਬਦਲੋ।' },
     'epub-to-pdf': { t: "EPUB ਤੋਂ PDF", d: "EPUB ਈ-ਬੁੱਕਾਂ ਨੂੰ PDF ਵਿੱਚ ਬਦਲੋ।" },
     'epub-to-md': { t: "EPUB ਤੋਂ Markdown", d: "EPUB ਈ-ਬੁੱਕਾਂ ਨੂੰ MD ਵਿੱਚ ਬਦਲੋ।" },
     'fb2-to-pdf': { t: "FB2 ਤੋਂ PDF", d: "FB2 ਈ-ਬੁੱਕਾਂ ਨੂੰ PDF ਵਿੱਚ ਬਦਲੋ।" },

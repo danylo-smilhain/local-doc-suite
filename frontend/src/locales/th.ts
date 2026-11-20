@@ -49,6 +49,7 @@ const th = {
     'word-to-fb2': { t: "Word เป็น FB2", d: "แปลง DOCX เป็น FB2" },
     'word-to-pdf': { t: "Word เป็น PDF", d: "แปลง DOCX เป็น PDF" },
     'doc-to-docx': { t: "DOC เป็น DOCX", d: "แปลง DOC เป็น DOCX" },
+    'xlsx-to-xls': { t: 'XLSX เป็น XLS', d: 'แปลง XLSX เป็น XLS' },
     'epub-to-pdf': { t: "EPUB เป็น PDF", d: "แปลงอีบุ๊ก EPUB เป็น PDF" },
     'epub-to-md': { t: "EPUB เป็น Markdown", d: "แปลงอีบุ๊ก EPUB เป็น MD" },
     'fb2-to-pdf': { t: "FB2 เป็น PDF", d: "แปลงอีบุ๊ก FB2 เป็น PDF" },

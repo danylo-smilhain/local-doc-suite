@@ -49,6 +49,7 @@ const sv = {
     'word-to-fb2': { t: "Word till FB2", d: "Konvertera DOCX till FB2." },
     'word-to-pdf': { t: "Word till PDF", d: "Konvertera DOCX till PDF." },
     'doc-to-docx': { t: "DOC till DOCX", d: "Konvertera DOC till DOCX." },
+    'xlsx-to-xls': { t: 'XLSX till XLS', d: 'Konvertera XLSX till XLS.' },
     'epub-to-pdf': { t: "EPUB till PDF", d: "Konvertera EPUB-e-böcker till PDF-format." },
     'epub-to-md': { t: "EPUB till Markdown", d: "Konvertera EPUB-e-böcker till MD-dokument." },
     'fb2-to-pdf': { t: "FB2 till PDF", d: "Konvertera FB2-e-böcker till PDF-format." },

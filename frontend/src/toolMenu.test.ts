@@ -134,3 +134,19 @@ describe('Spreadsheets merge as XLSX and as XLS', () => {
     }
   });
 });
+
+describe('XLSX to XLS', () => {
+  type ToolTexts = Record<string, { t: string; d: string }>;
+  it('is a convert tool giving xls, in the Documents menu after DOC to DOCX', () => {
+    const tool = toolsConfig.find((t) => t.id === 'xlsx-to-xls');
+    expect([tool?.out, tool?.category]).toEqual(['xls', 'convert']);
+    const docs = TOOL_MENU.documents;
+    expect(docs.indexOf('xlsx-to-xls')).toBe(docs.indexOf('doc-to-docx') + 1);
+  });
+  it.each(LANGUAGES.map((l) => l.code))('%s names both formats and translates the description', async (code) => {
+    const text = ((await loadMessages(code)).tools as ToolTexts)['xlsx-to-xls'];
+    expect(text.t).toContain('XLSX');
+    expect(text.t.replace('XLSX', '')).toMatch(/XLS(?!X)/);
+    if (code !== 'en') expect(text.d).not.toBe((en.tools as ToolTexts)['xlsx-to-xls'].d);
+  });
+});

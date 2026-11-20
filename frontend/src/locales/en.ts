@@ -49,6 +49,7 @@ const en = {
     'word-to-fb2': { t: 'Word to FB2', d: 'Convert DOCX to FB2.' },
     'word-to-pdf': { t: 'Word to PDF', d: 'Convert DOCX to PDF.' },
     'doc-to-docx': { t: 'DOC to DOCX', d: 'Convert DOC to DOCX.' },
+    'xlsx-to-xls': { t: 'XLSX to XLS', d: 'Convert XLSX to XLS.' },
     'epub-to-pdf': { t: 'EPUB to PDF', d: 'Convert EPUB e-books to PDF format.' },
     'epub-to-md': { t: 'EPUB to Markdown', d: 'Convert EPUB e-books to MD document.' },
     'fb2-to-pdf': { t: 'FB2 to PDF', d: 'Convert FB2 e-books to PDF format.' },

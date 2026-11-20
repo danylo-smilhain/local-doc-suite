@@ -49,6 +49,7 @@ const ltg = {
     'word-to-fb2': { t: "Word uz FB2", d: "Pārveidoj DOCX uz FB2." },
     'word-to-pdf': { t: "Word uz PDF", d: "Pārveidoj DOCX uz PDF." },
     'doc-to-docx': { t: "DOC uz DOCX", d: "Pārveidoj DOC uz DOCX." },
+    'xlsx-to-xls': { t: 'XLSX uz XLS', d: 'Pārveidoj XLSX uz XLS.' },
     'epub-to-pdf': { t: "EPUB uz PDF", d: "Pārveidoj EPUB e-gruomotys uz PDF." },
     'epub-to-md': { t: "EPUB uz Markdown", d: "Pārveidoj EPUB e-gruomotys uz MD." },
     'fb2-to-pdf': { t: "FB2 uz PDF", d: "Pārveidoj FB2 e-gruomotys uz PDF." },

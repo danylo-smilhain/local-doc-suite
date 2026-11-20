@@ -49,6 +49,7 @@ const bg = {
     'word-to-fb2': { t: "Word в FB2", d: "Конвертиране на DOCX във FB2." },
     'word-to-pdf': { t: "Word в PDF", d: "Конвертиране на DOCX в PDF." },
     'doc-to-docx': { t: "DOC в DOCX", d: "Конвертиране на DOC в DOCX." },
+    'xlsx-to-xls': { t: 'XLSX в XLS', d: 'Конвертиране на XLSX в XLS.' },
     'epub-to-pdf': { t: "EPUB в PDF", d: "Конвертиране на електронни книги EPUB във формат PDF." },
     'epub-to-md': { t: "EPUB в Markdown", d: "Конвертиране на електронни книги EPUB в документ MD." },
     'fb2-to-pdf': { t: "FB2 в PDF", d: "Конвертиране на електронни книги FB2 във формат PDF." },

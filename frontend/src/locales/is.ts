@@ -49,6 +49,7 @@ const is = {
     'word-to-fb2': { t: "Word í FB2", d: "Umbreyttu DOCX í FB2." },
     'word-to-pdf': { t: "Word í PDF", d: "Umbreyttu DOCX í PDF." },
     'doc-to-docx': { t: "DOC í DOCX", d: "Umbreyttu DOC í DOCX." },
+    'xlsx-to-xls': { t: 'XLSX í XLS', d: 'Umbreyttu XLSX í XLS.' },
     'epub-to-pdf': { t: "EPUB í PDF", d: "Umbreyttu EPUB-rafbókum á PDF-snið." },
     'epub-to-md': { t: "EPUB í Markdown", d: "Umbreyttu EPUB-rafbókum í MD-skjal." },
     'fb2-to-pdf': { t: "FB2 í PDF", d: "Umbreyttu FB2-rafbókum á PDF-snið." },

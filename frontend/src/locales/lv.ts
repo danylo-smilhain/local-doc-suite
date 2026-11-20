@@ -49,6 +49,7 @@ const lv = {
     'word-to-fb2': { t: "Word uz FB2", d: "Konvertējiet DOCX uz FB2." },
     'word-to-pdf': { t: "Word uz PDF", d: "Konvertējiet DOCX uz PDF." },
     'doc-to-docx': { t: "DOC uz DOCX", d: "Konvertējiet DOC uz DOCX." },
+    'xlsx-to-xls': { t: 'XLSX uz XLS', d: 'Konvertējiet XLSX uz XLS.' },
     'epub-to-pdf': { t: "EPUB uz PDF", d: "Konvertējiet EPUB e-grāmatas uz PDF formātu." },
     'epub-to-md': { t: "EPUB uz Markdown", d: "Konvertējiet EPUB e-grāmatas uz MD dokumentu." },
     'fb2-to-pdf': { t: "FB2 uz PDF", d: "Konvertējiet FB2 e-grāmatas uz PDF formātu." },

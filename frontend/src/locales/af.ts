@@ -49,6 +49,7 @@ const af = {
     'word-to-fb2': { t: "Word na FB2", d: "Skakel DOCX om na FB2." },
     'word-to-pdf': { t: "Word na PDF", d: "Skakel DOCX om na PDF." },
     'doc-to-docx': { t: "DOC na DOCX", d: "Skakel DOC om na DOCX." },
+    'xlsx-to-xls': { t: 'XLSX na XLS', d: 'Skakel XLSX om na XLS.' },
     'epub-to-pdf': { t: "EPUB na PDF", d: "Skakel EPUB-e-boeke om na PDF." },
     'epub-to-md': { t: "EPUB na Markdown", d: "Skakel EPUB-e-boeke om na MD." },
     'fb2-to-pdf': { t: "FB2 na PDF", d: "Skakel FB2-e-boeke om na PDF." },

@@ -49,6 +49,7 @@ const et = {
     'word-to-fb2': { t: "Word → FB2", d: "Teisenda DOCX FB2-vormingusse." },
     'word-to-pdf': { t: "Word → PDF", d: "Teisenda DOCX PDF-vormingusse." },
     'doc-to-docx': { t: "DOC → DOCX", d: "Teisenda DOC DOCX-vormingusse." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'Teisenda XLSX XLS-vormingusse.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "Teisenda EPUB-e-raamatud PDF-vormingusse." },
     'epub-to-md': { t: "EPUB → Markdown", d: "Teisenda EPUB-e-raamatud MD-dokumendiks." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "Teisenda FB2-e-raamatud PDF-vormingusse." },

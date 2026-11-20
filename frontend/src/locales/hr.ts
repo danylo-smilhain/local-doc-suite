@@ -49,6 +49,7 @@ const hr = {
     'word-to-fb2': { t: "Word u FB2", d: "Pretvorite DOCX u FB2." },
     'word-to-pdf': { t: "Word u PDF", d: "Pretvorite DOCX u PDF." },
     'doc-to-docx': { t: "DOC u DOCX", d: "Pretvorite DOC u DOCX." },
+    'xlsx-to-xls': { t: 'XLSX u XLS', d: 'Pretvorite XLSX u XLS.' },
     'epub-to-pdf': { t: "EPUB u PDF", d: "Pretvorite e-knjige EPUB u format PDF." },
     'epub-to-md': { t: "EPUB u Markdown", d: "Pretvorite e-knjige EPUB u dokument MD." },
     'fb2-to-pdf': { t: "FB2 u PDF", d: "Pretvorite e-knjige FB2 u format PDF." },

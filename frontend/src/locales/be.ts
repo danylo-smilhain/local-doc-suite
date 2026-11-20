@@ -49,6 +49,7 @@ const be = {
     'word-to-fb2': { t: "Word у FB2", d: "Канвертацыя DOCX у FB2." },
     'word-to-pdf': { t: "Word у PDF", d: "Канвертацыя DOCX у PDF." },
     'doc-to-docx': { t: "DOC у DOCX", d: "Канвертацыя DOC у DOCX." },
+    'xlsx-to-xls': { t: 'XLSX у XLS', d: 'Канвертацыя XLSX у XLS.' },
     'epub-to-pdf': { t: "EPUB у PDF", d: "Канвертацыя электронных кніг EPUB у фармат PDF." },
     'epub-to-md': { t: "EPUB у Markdown", d: "Канвертацыя электронных кніг EPUB у дакумент MD." },
     'fb2-to-pdf': { t: "FB2 у PDF", d: "Канвертацыя электронных кніг FB2 у фармат PDF." },

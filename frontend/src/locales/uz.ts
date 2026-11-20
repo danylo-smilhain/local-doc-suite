@@ -49,6 +49,7 @@ const uz = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX faylini FB2 formatiga oʻgirish." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX faylini PDF formatiga oʻgirish." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC faylini DOCX formatiga oʻgirish." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX faylini XLS formatiga oʻgirish.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB elektron kitoblarini PDF formatiga oʻgirish." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB elektron kitoblarini MD hujjatiga oʻgirish." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 elektron kitoblarini PDF formatiga oʻgirish." },

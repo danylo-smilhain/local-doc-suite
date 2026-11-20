@@ -49,6 +49,7 @@ const nl = {
     'word-to-fb2': { t: "Word naar FB2", d: "DOCX naar FB2 converteren." },
     'word-to-pdf': { t: "Word naar PDF", d: "DOCX naar PDF converteren." },
     'doc-to-docx': { t: "DOC naar DOCX", d: "DOC naar DOCX converteren." },
+    'xlsx-to-xls': { t: 'XLSX naar XLS', d: 'XLSX naar XLS converteren.' },
     'epub-to-pdf': { t: "EPUB naar PDF", d: "EPUB-e-books naar PDF-formaat converteren." },
     'epub-to-md': { t: "EPUB naar Markdown", d: "EPUB-e-books naar een MD-document converteren." },
     'fb2-to-pdf': { t: "FB2 naar PDF", d: "FB2-e-books naar PDF-formaat converteren." },

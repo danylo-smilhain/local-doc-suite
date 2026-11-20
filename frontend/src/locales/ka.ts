@@ -49,6 +49,7 @@ const ka = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX-ის კონვერტაცია FB2-ში." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX-ის კონვერტაცია PDF-ში." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC-ის კონვერტაცია DOCX-ში." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX-ის კონვერტაცია XLS-ში.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB ელწიგნების კონვერტაცია PDF ფორმატში." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB ელწიგნების კონვერტაცია MD დოკუმენტად." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 ელწიგნების კონვერტაცია PDF ფორმატში." },

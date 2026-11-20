@@ -49,6 +49,7 @@ const km = {
     'word-to-fb2': { t: "Word → FB2", d: "បំប្លែង DOCX ទៅ FB2។" },
     'word-to-pdf': { t: "Word → PDF", d: "បំប្លែង DOCX ទៅ PDF។" },
     'doc-to-docx': { t: "DOC → DOCX", d: "បំប្លែង DOC ទៅ DOCX។" },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'បំប្លែង XLSX ទៅ XLS។' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "បំប្លែងសៀវភៅអេឡិចត្រូនិក EPUB ទៅ PDF។" },
     'epub-to-md': { t: "EPUB → Markdown", d: "បំប្លែងសៀវភៅអេឡិចត្រូនិក EPUB ទៅ MD។" },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "បំប្លែងសៀវភៅអេឡិចត្រូនិក FB2 ទៅ PDF។" },

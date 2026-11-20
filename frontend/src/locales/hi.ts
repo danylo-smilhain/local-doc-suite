@@ -49,6 +49,7 @@ const hi = {
     'word-to-fb2': { t: "Word से FB2", d: "DOCX को FB2 में बदलें।" },
     'word-to-pdf': { t: "Word से PDF", d: "DOCX को PDF में बदलें।" },
     'doc-to-docx': { t: "DOC से DOCX", d: "DOC को DOCX में बदलें।" },
+    'xlsx-to-xls': { t: 'XLSX से XLS', d: 'XLSX को XLS में बदलें।' },
     'epub-to-pdf': { t: "EPUB से PDF", d: "EPUB ई-बुक को PDF प्रारूप में बदलें।" },
     'epub-to-md': { t: "EPUB से Markdown", d: "EPUB ई-बुक को MD दस्तावेज़ में बदलें।" },
     'fb2-to-pdf': { t: "FB2 से PDF", d: "FB2 ई-बुक को PDF प्रारूप में बदलें।" },

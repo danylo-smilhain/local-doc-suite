@@ -49,6 +49,7 @@ const fa = {
     'word-to-fb2': { t: "Word به FB2", d: "تبدیل DOCX به FB2." },
     'word-to-pdf': { t: "Word به PDF", d: "تبدیل DOCX به PDF." },
     'doc-to-docx': { t: "DOC به DOCX", d: "تبدیل DOC به DOCX." },
+    'xlsx-to-xls': { t: 'XLSX به XLS', d: 'تبدیل XLSX به XLS.' },
     'epub-to-pdf': { t: "EPUB به PDF", d: "تبدیل کتاب‌های الکترونیکی EPUB به قالب PDF." },
     'epub-to-md': { t: "EPUB به Markdown", d: "تبدیل کتاب‌های الکترونیکی EPUB به سند MD." },
     'fb2-to-pdf': { t: "FB2 به PDF", d: "تبدیل کتاب‌های الکترونیکی FB2 به قالب PDF." },

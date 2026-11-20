@@ -49,6 +49,7 @@ const mn = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX файлыг FB2 формат руу хөрвүүлэх." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX файлыг PDF формат руу хөрвүүлэх." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC файлыг DOCX формат руу хөрвүүлэх." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX файлыг XLS формат руу хөрвүүлэх.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB цахим номыг PDF формат руу хөрвүүлэх." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB цахим номыг MD баримт болгон хөрвүүлэх." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 цахим номыг PDF формат руу хөрвүүлэх." },

@@ -49,6 +49,7 @@ const id = {
     'word-to-fb2': { t: "Word ke FB2", d: "Konversi DOCX ke FB2." },
     'word-to-pdf': { t: "Word ke PDF", d: "Konversi DOCX ke PDF." },
     'doc-to-docx': { t: "DOC ke DOCX", d: "Konversi DOC ke DOCX." },
+    'xlsx-to-xls': { t: 'XLSX ke XLS', d: 'Konversi XLSX ke XLS.' },
     'epub-to-pdf': { t: "EPUB ke PDF", d: "Konversi buku elektronik EPUB ke format PDF." },
     'epub-to-md': { t: "EPUB ke Markdown", d: "Konversi buku elektronik EPUB ke dokumen MD." },
     'fb2-to-pdf': { t: "FB2 ke PDF", d: "Konversi buku elektronik FB2 ke format PDF." },

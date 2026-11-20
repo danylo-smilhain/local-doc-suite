@@ -49,6 +49,7 @@ const ko = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX 파일을 FB2 형식으로 변환합니다." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX 파일을 PDF 형식으로 변환합니다." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC 파일을 DOCX 형식으로 변환합니다." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX 파일을 XLS 형식으로 변환합니다.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB 전자책을 PDF 형식으로 변환합니다." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB 전자책을 MD 문서로 변환합니다." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 전자책을 PDF 형식으로 변환합니다." },

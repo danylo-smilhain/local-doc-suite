@@ -49,6 +49,7 @@ const sl = {
     'word-to-fb2': { t: "Word v FB2", d: "Pretvorite DOCX v FB2." },
     'word-to-pdf': { t: "Word v PDF", d: "Pretvorite DOCX v PDF." },
     'doc-to-docx': { t: "DOC v DOCX", d: "Pretvorite DOC v DOCX." },
+    'xlsx-to-xls': { t: 'XLSX v XLS', d: 'Pretvorite XLSX v XLS.' },
     'epub-to-pdf': { t: "EPUB v PDF", d: "Pretvorite e-knjige EPUB v obliko PDF." },
     'epub-to-md': { t: "EPUB v Markdown", d: "Pretvorite e-knjige EPUB v dokument MD." },
     'fb2-to-pdf': { t: "FB2 v PDF", d: "Pretvorite e-knjige FB2 v obliko PDF." },

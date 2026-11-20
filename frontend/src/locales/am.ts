@@ -49,6 +49,7 @@ const am = {
     'word-to-fb2': { t: "Word ወደ FB2", d: "DOCXን ወደ FB2 ይቀይሩ።" },
     'word-to-pdf': { t: "Word ወደ PDF", d: "DOCXን ወደ PDF ይቀይሩ።" },
     'doc-to-docx': { t: "DOC ወደ DOCX", d: "DOCን ወደ DOCX ይቀይሩ።" },
+    'xlsx-to-xls': { t: 'XLSX ወደ XLS', d: 'XLSXን ወደ XLS ይቀይሩ።' },
     'epub-to-pdf': { t: "EPUB ወደ PDF", d: "የ EPUB ኢ-መጻሕፍትን ወደ PDF ይቀይሩ።" },
     'epub-to-md': { t: "EPUB ወደ Markdown", d: "የ EPUB ኢ-መጻሕፍትን ወደ MD ይቀይሩ።" },
     'fb2-to-pdf': { t: "FB2 ወደ PDF", d: "የ FB2 ኢ-መጻሕፍትን ወደ PDF ይቀይሩ።" },

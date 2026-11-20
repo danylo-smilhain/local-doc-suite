@@ -49,6 +49,7 @@ const mt = {
     'word-to-fb2': { t: "Word għal FB2", d: "Ikkonverti DOCX għal FB2." },
     'word-to-pdf': { t: "Word għal PDF", d: "Ikkonverti DOCX għal PDF." },
     'doc-to-docx': { t: "DOC għal DOCX", d: "Ikkonverti DOC għal DOCX." },
+    'xlsx-to-xls': { t: 'XLSX għal XLS', d: 'Ikkonverti XLSX għal XLS.' },
     'epub-to-pdf': { t: "EPUB għal PDF", d: "Ikkonverti kotba elettroniċi EPUB għal PDF." },
     'epub-to-md': { t: "EPUB għal Markdown", d: "Ikkonverti kotba elettroniċi EPUB għal MD." },
     'fb2-to-pdf': { t: "FB2 għal PDF", d: "Ikkonverti kotba elettroniċi FB2 għal PDF." },

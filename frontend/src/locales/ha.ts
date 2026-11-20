@@ -49,6 +49,7 @@ const ha = {
     'word-to-fb2': { t: "Word zuwa FB2", d: "Maida DOCX zuwa FB2." },
     'word-to-pdf': { t: "Word zuwa PDF", d: "Maida DOCX zuwa PDF." },
     'doc-to-docx': { t: "DOC zuwa DOCX", d: "Maida DOC zuwa DOCX." },
+    'xlsx-to-xls': { t: 'XLSX zuwa XLS', d: 'Maida XLSX zuwa XLS.' },
     'epub-to-pdf': { t: "EPUB zuwa PDF", d: "Maida littattafan lantarki na EPUB zuwa PDF." },
     'epub-to-md': { t: "EPUB zuwa Markdown", d: "Maida littattafan lantarki na EPUB zuwa MD." },
     'fb2-to-pdf': { t: "FB2 zuwa PDF", d: "Maida littattafan lantarki na FB2 zuwa PDF." },

@@ -49,6 +49,7 @@ const hu = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX konvertálása FB2-be." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX konvertálása PDF-be." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC konvertálása DOCX formátumba." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX konvertálása XLS formátumba.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB e-könyvek konvertálása PDF formátumba." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB e-könyvek konvertálása MD-dokumentummá." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 e-könyvek konvertálása PDF formátumba." },

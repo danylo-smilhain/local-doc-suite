@@ -49,6 +49,7 @@ const ga = {
     'word-to-fb2': { t: "Word → FB2", d: "Tiontaigh DOCX go FB2." },
     'word-to-pdf': { t: "Word → PDF", d: "Tiontaigh DOCX go PDF." },
     'doc-to-docx': { t: "DOC → DOCX", d: "Tiontaigh DOC go DOCX." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'Tiontaigh XLSX go XLS.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "Tiontaigh r-leabhair EPUB go formáid PDF." },
     'epub-to-md': { t: "EPUB → Markdown", d: "Tiontaigh r-leabhair EPUB go doiciméad MD." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "Tiontaigh r-leabhair FB2 go formáid PDF." },

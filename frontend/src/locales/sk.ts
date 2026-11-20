@@ -49,6 +49,7 @@ const sk = {
     'word-to-fb2': { t: "Word na FB2", d: "Konvertujte DOCX na FB2." },
     'word-to-pdf': { t: "Word na PDF", d: "Konvertujte DOCX na PDF." },
     'doc-to-docx': { t: "DOC na DOCX", d: "Konvertujte DOC na DOCX." },
+    'xlsx-to-xls': { t: 'XLSX na XLS', d: 'Konvertujte XLSX na XLS.' },
     'epub-to-pdf': { t: "EPUB na PDF", d: "Konvertujte e-knihy EPUB do formátu PDF." },
     'epub-to-md': { t: "EPUB na Markdown", d: "Konvertujte e-knihy EPUB na dokument MD." },
     'fb2-to-pdf': { t: "FB2 na PDF", d: "Konvertujte e-knihy FB2 do formátu PDF." },

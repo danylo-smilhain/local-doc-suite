@@ -49,6 +49,7 @@ const ce = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX FB2 формате хийца." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX PDF формате хийца." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC DOCX формате хийца." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX XLS формате хийца.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB электронни книгаш PDF формате хийца." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB электронни книгаш MD формате хийца." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 электронни книгаш PDF формате хийца." },

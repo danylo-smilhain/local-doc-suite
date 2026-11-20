@@ -49,6 +49,7 @@ const sw = {
     'word-to-fb2': { t: "Word kuwa FB2", d: "Badilisha DOCX kuwa FB2." },
     'word-to-pdf': { t: "Word kuwa PDF", d: "Badilisha DOCX kuwa PDF." },
     'doc-to-docx': { t: "DOC kuwa DOCX", d: "Badilisha DOC kuwa DOCX." },
+    'xlsx-to-xls': { t: 'XLSX kuwa XLS', d: 'Badilisha XLSX kuwa XLS.' },
     'epub-to-pdf': { t: "EPUB kuwa PDF", d: "Badilisha vitabu pepe vya EPUB kuwa PDF." },
     'epub-to-md': { t: "EPUB kuwa Markdown", d: "Badilisha vitabu pepe vya EPUB kuwa MD." },
     'fb2-to-pdf': { t: "FB2 kuwa PDF", d: "Badilisha vitabu pepe vya FB2 kuwa PDF." },

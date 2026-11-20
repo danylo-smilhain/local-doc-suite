@@ -49,6 +49,7 @@ const fil = {
     'word-to-fb2': { t: "Word sa FB2", d: "I-convert ang DOCX sa FB2." },
     'word-to-pdf': { t: "Word sa PDF", d: "I-convert ang DOCX sa PDF." },
     'doc-to-docx': { t: "DOC sa DOCX", d: "I-convert ang DOC sa DOCX." },
+    'xlsx-to-xls': { t: 'XLSX sa XLS', d: 'I-convert ang XLSX sa XLS.' },
     'epub-to-pdf': { t: "EPUB sa PDF", d: "I-convert ang mga EPUB e-book sa PDF." },
     'epub-to-md': { t: "EPUB sa Markdown", d: "I-convert ang mga EPUB e-book sa MD." },
     'fb2-to-pdf': { t: "FB2 sa PDF", d: "I-convert ang mga FB2 e-book sa PDF." },

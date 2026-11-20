@@ -49,6 +49,7 @@ const bn = {
     'word-to-fb2': { t: "Word থেকে FB2", d: "DOCX-কে FB2-এ রূপান্তর করুন।" },
     'word-to-pdf': { t: "Word থেকে PDF", d: "DOCX-কে PDF-এ রূপান্তর করুন।" },
     'doc-to-docx': { t: "DOC থেকে DOCX", d: "DOC-কে DOCX-এ রূপান্তর করুন।" },
+    'xlsx-to-xls': { t: 'XLSX থেকে XLS', d: 'XLSX-কে XLS-এ রূপান্তর করুন।' },
     'epub-to-pdf': { t: "EPUB থেকে PDF", d: "EPUB ই-বুককে PDF-এ রূপান্তর করুন।" },
     'epub-to-md': { t: "EPUB থেকে Markdown", d: "EPUB ই-বুককে MD-এ রূপান্তর করুন।" },
     'fb2-to-pdf': { t: "FB2 থেকে PDF", d: "FB2 ই-বুককে PDF-এ রূপান্তর করুন।" },

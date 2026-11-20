@@ -49,6 +49,7 @@ const ar = {
     'word-to-fb2': { t: "Word إلى FB2", d: "تحويل DOCX إلى FB2." },
     'word-to-pdf': { t: "Word إلى PDF", d: "تحويل DOCX إلى PDF." },
     'doc-to-docx': { t: "DOC إلى DOCX", d: "تحويل DOC إلى DOCX." },
+    'xlsx-to-xls': { t: 'XLSX إلى XLS', d: 'تحويل XLSX إلى XLS.' },
     'epub-to-pdf': { t: "EPUB إلى PDF", d: "تحويل الكتب الإلكترونية EPUB إلى صيغة PDF." },
     'epub-to-md': { t: "EPUB إلى Markdown", d: "تحويل الكتب الإلكترونية EPUB إلى مستند MD." },
     'fb2-to-pdf': { t: "FB2 إلى PDF", d: "تحويل الكتب الإلكترونية FB2 إلى صيغة PDF." },

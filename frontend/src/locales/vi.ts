@@ -49,6 +49,7 @@ const vi = {
     'word-to-fb2': { t: "Word sang FB2", d: "Chuyển DOCX sang FB2." },
     'word-to-pdf': { t: "Word sang PDF", d: "Chuyển DOCX sang PDF." },
     'doc-to-docx': { t: "DOC sang DOCX", d: "Chuyển DOC sang DOCX." },
+    'xlsx-to-xls': { t: 'XLSX sang XLS', d: 'Chuyển XLSX sang XLS.' },
     'epub-to-pdf': { t: "EPUB sang PDF", d: "Chuyển sách điện tử EPUB sang định dạng PDF." },
     'epub-to-md': { t: "EPUB sang Markdown", d: "Chuyển sách điện tử EPUB sang tài liệu MD." },
     'fb2-to-pdf': { t: "FB2 sang PDF", d: "Chuyển sách điện tử FB2 sang định dạng PDF." },

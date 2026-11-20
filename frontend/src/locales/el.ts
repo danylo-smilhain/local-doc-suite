@@ -49,6 +49,7 @@ const el = {
     'word-to-fb2': { t: "Word σε FB2", d: "Μετατροπή DOCX σε FB2." },
     'word-to-pdf': { t: "Word σε PDF", d: "Μετατροπή DOCX σε PDF." },
     'doc-to-docx': { t: "DOC σε DOCX", d: "Μετατροπή DOC σε DOCX." },
+    'xlsx-to-xls': { t: 'XLSX σε XLS', d: 'Μετατροπή XLSX σε XLS.' },
     'epub-to-pdf': { t: "EPUB σε PDF", d: "Μετατροπή ηλεκτρονικών βιβλίων EPUB σε μορφή PDF." },
     'epub-to-md': { t: "EPUB σε Markdown", d: "Μετατροπή ηλεκτρονικών βιβλίων EPUB σε έγγραφο MD." },
     'fb2-to-pdf': { t: "FB2 σε PDF", d: "Μετατροπή ηλεκτρονικών βιβλίων FB2 σε μορφή PDF." },

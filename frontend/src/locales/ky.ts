@@ -49,6 +49,7 @@ const ky = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX файлын FB2 форматына айландыруу." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX файлын PDF форматына айландыруу." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC файлын DOCX форматына айландыруу." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX файлын XLS форматына айландыруу.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB электрондук китептерин PDF форматына айландыруу." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB электрондук китептерин MD документине айландыруу." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 электрондук китептерин PDF форматына айландыруу." },

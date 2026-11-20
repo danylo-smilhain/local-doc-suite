@@ -49,6 +49,7 @@ const lt = {
     'word-to-fb2': { t: "Word į FB2", d: "Konvertuokite DOCX į FB2." },
     'word-to-pdf': { t: "Word į PDF", d: "Konvertuokite DOCX į PDF." },
     'doc-to-docx': { t: "DOC į DOCX", d: "Konvertuokite DOC į DOCX." },
+    'xlsx-to-xls': { t: 'XLSX į XLS', d: 'Konvertuokite XLSX į XLS.' },
     'epub-to-pdf': { t: "EPUB į PDF", d: "Konvertuokite EPUB el. knygas į PDF formatą." },
     'epub-to-md': { t: "EPUB į Markdown", d: "Konvertuokite EPUB el. knygas į MD dokumentą." },
     'fb2-to-pdf': { t: "FB2 į PDF", d: "Konvertuokite FB2 el. knygas į PDF formatą." },

@@ -49,6 +49,7 @@ const sr = {
     'word-to-fb2': { t: "Word у FB2", d: "Претварање DOCX датотека у FB2." },
     'word-to-pdf': { t: "Word у PDF", d: "Претварање DOCX датотека у PDF." },
     'doc-to-docx': { t: "DOC у DOCX", d: "Претварање DOC датотека у DOCX." },
+    'xlsx-to-xls': { t: 'XLSX у XLS', d: 'Претварање XLSX датотека у XLS.' },
     'epub-to-pdf': { t: "EPUB у PDF", d: "Претварање е-књига EPUB у формат PDF." },
     'epub-to-md': { t: "EPUB у Markdown", d: "Претварање е-књига EPUB у документ MD." },
     'fb2-to-pdf': { t: "FB2 у PDF", d: "Претварање е-књига FB2 у формат PDF." },

@@ -49,6 +49,7 @@ const tg = {
     'word-to-fb2': { t: "Word ба FB2", d: "Табдили DOCX ба FB2." },
     'word-to-pdf': { t: "Word ба PDF", d: "Табдили DOCX ба PDF." },
     'doc-to-docx': { t: "DOC ба DOCX", d: "Табдили DOC ба DOCX." },
+    'xlsx-to-xls': { t: 'XLSX ба XLS', d: 'Табдили XLSX ба XLS.' },
     'epub-to-pdf': { t: "EPUB ба PDF", d: "Табдили китобҳои электронии EPUB ба формати PDF." },
     'epub-to-md': { t: "EPUB ба Markdown", d: "Табдили китобҳои электронии EPUB ба ҳуҷҷати MD." },
     'fb2-to-pdf': { t: "FB2 ба PDF", d: "Табдили китобҳои электронии FB2 ба формати PDF." },

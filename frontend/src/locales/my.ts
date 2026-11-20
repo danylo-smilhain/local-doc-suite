@@ -49,6 +49,7 @@ const my = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX ကို FB2 သို့ ပြောင်းပါ။" },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX ကို PDF သို့ ပြောင်းပါ။" },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC ကို DOCX သို့ ပြောင်းပါ။" },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX ကို XLS သို့ ပြောင်းပါ။' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB အီးဘွတ်ခ်များကို PDF သို့ ပြောင်းပါ။" },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB အီးဘွတ်ခ်များကို MD သို့ ပြောင်းပါ။" },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 အီးဘွတ်ခ်များကို PDF သို့ ပြောင်းပါ။" },

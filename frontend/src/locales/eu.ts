@@ -49,6 +49,7 @@ const eu = {
     'word-to-fb2': { t: "Word → FB2", d: "Bihurtu DOCX fitxategiak FB2 formatura." },
     'word-to-pdf': { t: "Word → PDF", d: "Bihurtu DOCX fitxategiak PDF formatura." },
     'doc-to-docx': { t: "DOC → DOCX", d: "Bihurtu DOC fitxategiak DOCX formatura." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'Bihurtu XLSX fitxategiak XLS formatura.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "Bihurtu EPUB liburu elektronikoak PDF formatura." },
     'epub-to-md': { t: "EPUB → Markdown", d: "Bihurtu EPUB liburu elektronikoak MD formatura." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "Bihurtu FB2 liburu elektronikoak PDF formatura." },

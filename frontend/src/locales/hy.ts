@@ -49,6 +49,7 @@ const hy = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX-ի փոխարկում FB2-ի։" },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX-ի փոխարկում PDF-ի։" },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC-ի փոխարկում DOCX-ի։" },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX-ի փոխարկում XLS-ի։' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB էլեկտրոնային գրքերի փոխարկում PDF ձևաչափի։" },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB էլեկտրոնային գրքերի փոխարկում MD փաստաթղթի։" },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 էլեկտրոնային գրքերի փոխարկում PDF ձևաչափի։" },

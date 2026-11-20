@@ -66,7 +66,7 @@ describe('home page', () => {
       'TS to WebM', 'TS to MP4', 'TS to MP3', 'PDF to PPTX (No OCR)', 'PDF to PPTX (with OCR)']) {
       expect(cards.map((h) => h.textContent)).toContain(title);
     }
-    expect(cards).toHaveLength(58);
+    expect(cards).toHaveLength(59);
   });
 
   it('filters tools by the MERGE / CONVERT / OCR buttons', () => {
@@ -83,7 +83,7 @@ describe('home page', () => {
     const { container } = render(createElement(App));
     fireEvent.click(screen.getByRole('button', { name: /All tools/ }));
     const menu = screen.getByRole('navigation', { name: 'All tools' });
-    expect(within(menu).getAllByRole('button')).toHaveLength(58);
+    expect(within(menu).getAllByRole('button')).toHaveLength(59);
     fireEvent.click(within(menu).getByRole('button', { name: 'WebM to MP4' }));
     expect(screen.getByRole('heading', { level: 2, name: 'WebM to MP4' })).toBeTruthy();
     expect(container.querySelector('#all-tools-menu')).toBeNull();

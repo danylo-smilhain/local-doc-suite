@@ -49,6 +49,7 @@ const ta = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX கோப்பை FB2 வடிவத்துக்கு மாற்றவும்." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX கோப்பை PDF வடிவத்துக்கு மாற்றவும்." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC கோப்பை DOCX வடிவத்துக்கு மாற்றவும்." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX கோப்பை XLS வடிவத்துக்கு மாற்றவும்.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB மின்னூல்களை PDF வடிவத்துக்கு மாற்றவும்." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB மின்னூல்களை MD வடிவத்துக்கு மாற்றவும்." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 மின்னூல்களை PDF வடிவத்துக்கு மாற்றவும்." },

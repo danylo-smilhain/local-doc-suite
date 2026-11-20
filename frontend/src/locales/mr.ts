@@ -49,6 +49,7 @@ const mr = {
     'word-to-fb2': { t: "Word ते FB2", d: "DOCX चे FB2 मध्ये रूपांतर करा." },
     'word-to-pdf': { t: "Word ते PDF", d: "DOCX चे PDF मध्ये रूपांतर करा." },
     'doc-to-docx': { t: "DOC ते DOCX", d: "DOC चे DOCX मध्ये रूपांतर करा." },
+    'xlsx-to-xls': { t: 'XLSX ते XLS', d: 'XLSX चे XLS मध्ये रूपांतर करा.' },
     'epub-to-pdf': { t: "EPUB ते PDF", d: "EPUB ई-पुस्तकांचे PDF मध्ये रूपांतर करा." },
     'epub-to-md': { t: "EPUB ते Markdown", d: "EPUB ई-पुस्तकांचे MD मध्ये रूपांतर करा." },
     'fb2-to-pdf': { t: "FB2 ते PDF", d: "FB2 ई-पुस्तकांचे PDF मध्ये रूपांतर करा." },

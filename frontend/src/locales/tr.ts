@@ -49,6 +49,7 @@ const tr = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX dosyalarını FB2 biçimine dönüştürün." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX dosyalarını PDF biçimine dönüştürün." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC dosyalarını DOCX biçimine dönüştürün." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX dosyalarını XLS biçimine dönüştürün.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB e-kitaplarını PDF biçimine dönüştürün." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB e-kitaplarını MD belgesine dönüştürün." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 e-kitaplarını PDF biçimine dönüştürün." },

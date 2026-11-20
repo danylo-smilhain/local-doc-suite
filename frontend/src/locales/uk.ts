@@ -48,6 +48,7 @@ const uk = {
     'word-to-fb2': { t: 'Word у FB2', d: 'Конвертація DOCX у FB2.' },
     'word-to-pdf': { t: 'Word у PDF', d: 'Конвертація DOCX у PDF.' },
     'doc-to-docx': { t: 'DOC у DOCX', d: 'Конвертація DOC у DOCX.' },
+    'xlsx-to-xls': { t: 'XLSX у XLS', d: 'Конвертація XLSX у XLS.' },
     'epub-to-pdf': { t: 'EPUB у PDF', d: 'Конвертація книг EPUB у PDF.' },
     'epub-to-md': { t: 'EPUB у Markdown', d: 'Конвертація книг EPUB у MD.' },
     'fb2-to-pdf': { t: 'FB2 у PDF', d: 'Конвертація книг FB2 у PDF.' },

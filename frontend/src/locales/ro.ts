@@ -49,6 +49,7 @@ const ro = {
     'word-to-fb2': { t: "Word în FB2", d: "Convertește DOCX în FB2." },
     'word-to-pdf': { t: "Word în PDF", d: "Convertește DOCX în PDF." },
     'doc-to-docx': { t: "DOC în DOCX", d: "Convertește DOC în DOCX." },
+    'xlsx-to-xls': { t: 'XLSX în XLS', d: 'Convertește XLSX în XLS.' },
     'epub-to-pdf': { t: "EPUB în PDF", d: "Convertește cărți electronice EPUB în format PDF." },
     'epub-to-md': { t: "EPUB în Markdown", d: "Convertește cărți electronice EPUB în document MD." },
     'fb2-to-pdf': { t: "FB2 în PDF", d: "Convertește cărți electronice FB2 în format PDF." },

@@ -49,6 +49,7 @@ const te = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX ఫైల్‌ను FB2 ఫార్మాట్‌కు మార్చండి." },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX ఫైల్‌ను PDF ఫార్మాట్‌కు మార్చండి." },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC ఫైల్‌ను DOCX ఫార్మాట్‌కు మార్చండి." },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX ఫైల్‌ను XLS ఫార్మాట్‌కు మార్చండి.' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB ఈ-బుక్స్‌ను PDF ఫార్మాట్‌కు మార్చండి." },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB ఈ-బుక్స్‌ను MD ఫార్మాట్‌కు మార్చండి." },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 ఈ-బుక్స్‌ను PDF ఫార్మాట్‌కు మార్చండి." },

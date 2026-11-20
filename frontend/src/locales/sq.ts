@@ -49,6 +49,7 @@ const sq = {
     'word-to-fb2': { t: "Word në FB2", d: "Konvertoni DOCX në FB2." },
     'word-to-pdf': { t: "Word në PDF", d: "Konvertoni DOCX në PDF." },
     'doc-to-docx': { t: "DOC në DOCX", d: "Konvertoni DOC në DOCX." },
+    'xlsx-to-xls': { t: 'XLSX në XLS', d: 'Konvertoni XLSX në XLS.' },
     'epub-to-pdf': { t: "EPUB në PDF", d: "Konvertoni librat elektronikë EPUB në formatin PDF." },
     'epub-to-md': { t: "EPUB në Markdown", d: "Konvertoni librat elektronikë EPUB në dokument MD." },
     'fb2-to-pdf': { t: "FB2 në PDF", d: "Konvertoni librat elektronikë FB2 në formatin PDF." },

@@ -49,6 +49,7 @@ const ja = {
     'word-to-fb2': { t: "Word → FB2", d: "DOCX を FB2 に変換します。" },
     'word-to-pdf': { t: "Word → PDF", d: "DOCX を PDF に変換します。" },
     'doc-to-docx': { t: "DOC → DOCX", d: "DOC を DOCX に変換します。" },
+    'xlsx-to-xls': { t: 'XLSX → XLS', d: 'XLSX を XLS に変換します。' },
     'epub-to-pdf': { t: "EPUB → PDF", d: "EPUB 電子書籍を PDF 形式に変換します。" },
     'epub-to-md': { t: "EPUB → Markdown", d: "EPUB 電子書籍を MD ドキュメントに変換します。" },
     'fb2-to-pdf': { t: "FB2 → PDF", d: "FB2 電子書籍を PDF 形式に変換します。" },

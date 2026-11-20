@@ -40,6 +40,7 @@ TIF/TIFF, BMP, GIF, WebP, camera RAW/DNG.
 | PDF | PPTX: one slide per page: the background (page colour, texture, card) as one locked picture, photos, screenshots, logos, blocks and charts as separate pictures, and the text as editable text boxes; "with OCR" also recognises scans, picture-only slides (NotebookLM / Gemini exports) and damaged text layers, splits their pictures the same way, keeps table cells' text in its cells and reads serif or sans, bold or regular from the letters | PyMuPDF, Tesseract |
 | DOCX, DOC, ODT, RTF, PPTX, PPT, ODP, XLSX, XLS, ODS | PDF | LibreOffice |
 | DOC | DOCX | LibreOffice |
+| XLSX | XLS (every sheet with its formulas and look; frozen panes are not written into XLS, and the result says which sheets had them) | LibreOffice |
 | HTML/HTM | PDF, MD | |
 | TXT | MD (with encoding detection), and other text targets via Markdown | |
 | EPUB, FB2 | PDF, MD | |

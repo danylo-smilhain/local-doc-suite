@@ -49,6 +49,7 @@ const zhTW = {
     'word-to-fb2': { t: "Word 轉 FB2", d: "將 DOCX 轉換為 FB2。" },
     'word-to-pdf': { t: "Word 轉 PDF", d: "將 DOCX 轉換為 PDF。" },
     'doc-to-docx': { t: "DOC 轉 DOCX", d: "將 DOC 轉換為 DOCX。" },
+    'xlsx-to-xls': { t: 'XLSX 轉 XLS', d: '將 XLSX 轉換為 XLS。' },
     'epub-to-pdf': { t: "EPUB 轉 PDF", d: "將 EPUB 電子書轉換為 PDF 格式。" },
     'epub-to-md': { t: "EPUB 轉 Markdown", d: "將 EPUB 電子書轉換為 MD 文件。" },
     'fb2-to-pdf': { t: "FB2 轉 PDF", d: "將 FB2 電子書轉換為 PDF 格式。" },
