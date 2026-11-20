@@ -18,6 +18,9 @@ Glossary
 - conflict: a style of a later file whose name or id the master has with
   another definition. It is renamed ("Normal (2)") so both definitions stay.
 - story: where a file's text is: its body, headers and footers.
+- Word mode: the Word version a document is laid out for (compatibility
+  mode, one per document); it decides, among other things, where a table
+  stands against its indent.
 """
 from __future__ import annotations
 
@@ -300,6 +303,106 @@ def add_missing_bases(master, sub) -> None:
             return
 
 
+# ---- tables -------------------------------------------------------------------
+
+T_ORDER = ("tblStyle", "tblpPr", "tblOverlap", "bidiVisual", "tblStyleRowBandSize", "tblStyleColBandSize",
+           "tblW", "jc", "tblCellSpacing", "tblInd", "tblBorders", "shd", "tblLayout", "tblCellMar",
+           "tblLook", "tblCaption", "tblDescription")
+WORD_CELL_MARGIN = 108          # twips, a table's left cell margin when nothing says otherwise
+NEW_TABLE_RULE = 15             # Word 2013: a table's border, not its text, sits at its indent
+
+
+def word_mode(doc) -> int:
+    """The Word version a file is laid out for (11: 2003, 15: 2013 and later);
+    one per document. A file that names none is laid out the old way."""
+    for setting in doc.settings.element.iter(W + "compatSetting"):
+        if setting.get(W + "name") == "compatibilityMode":
+            return int(setting.get(W + "val", "0"))
+    return 0
+
+
+def _old_table_rule(doc) -> bool:
+    """Before Word 2013 a table stood out to the left by its cell margin, so
+    its text lined up with the page's."""
+    return word_mode(doc) < NEW_TABLE_RULE
+
+
+def _cell_margin(tbl, sub) -> int:
+    """The table's left cell margin: its own, its style's (or a base's), the file's default table style's."""
+    def own(tblpr):
+        if tblpr is None:
+            return None
+        for side in ("left", "start"):
+            found = tblpr.find(f"{W}tblCellMar/{W}{side}")
+            if found is not None and found.get(W + "type", "dxa") == "dxa":
+                return int(found.get(W + "w"))
+        return None
+    found = own(tbl.tblPr)
+    style_ref = tbl.tblPr.find(W + "tblStyle")
+    sid = style_ref.get(W + "val") if style_ref is not None else _defaults_by_type(sub).get("table")
+    while found is None and sid:
+        style = sub.styles.element.get_by_id(sid)
+        if style is None:
+            break
+        found = own(style.find(W + "tblPr"))
+        base = style.find(W + "basedOn")
+        sid = base.get(W + "val") if base is not None else None
+    return WORD_CELL_MARGIN if found is None else found
+
+
+def place_tables(master, sub) -> None:
+    """Tables of a file saved under the other table rule than the master's
+    keep their place on the page: their indent moves by their cell margin."""
+    shift = _old_table_rule(master) - _old_table_rule(sub)       # +1, 0 or -1
+    if not shift:
+        return
+    for tbl in sub.element.body.iter(W + "tbl"):      # a centred table ignores its indent anyway
+        ind = tbl.tblPr.find(W + "tblInd")
+        if ind is None:
+            ind = OxmlElement("w:tblInd")
+            ind.set(W + "w", "0")
+            _place(tbl.tblPr, ind, T_ORDER)
+        if ind.get(W + "type", "dxa") != "dxa":
+            continue
+        margin = _cell_margin(tbl, sub)
+        ind.set(W + "type", "dxa")
+        ind.set(W + "w", str(int(ind.get(W + "w", "0")) + shift * margin))
+        _own_cell_margin(tbl, margin)
+
+
+def _own_cell_margin(tbl, margin: int) -> None:
+    """The margin the move was measured by, written on the table itself: a
+    margin from the default table style is one LibreOffice does not apply."""
+    cells = tbl.tblPr.find(W + "tblCellMar")
+    if cells is None:
+        cells = OxmlElement("w:tblCellMar")
+        _place(tbl.tblPr, cells, T_ORDER)
+    if cells.find(W + "left") is None and cells.find(W + "start") is None:
+        left = OxmlElement("w:left")
+        left.set(W + "w", str(margin))
+        left.set(W + "type", "dxa")
+        top = cells.find(W + "top")
+        if top is not None:
+            top.addnext(left)
+        else:
+            cells.insert(0, left)
+
+
+# w:settings children that come after w:compat (ECMA-376 CT_Settings)
+AFTER_COMPAT = ("docVars", "rsids", "mathPr", "attachedSchema", "themeFontLang", "clrSchemeMapping",
+                "doNotIncludeSubdocsInStats", "doNotAutoCompressPictures", "forceUpgrade", "captions",
+                "readModeInkLockDown", "smartTagType", "schemaLibrary", "shapeDefaults",
+                "doNotEmbedSmartTags", "decimalSymbol", "listSeparator")
+
+
+def _place_compat(settings, compat) -> None:
+    for i, child in enumerate(settings):
+        if _local(child.tag) in AFTER_COMPAT:
+            settings.insert(i, compat)
+            return
+    settings.append(compat)
+
+
 # ---- page setup ---------------------------------------------------------------
 
 def _body_setup(doc):
@@ -417,13 +520,33 @@ def take_page_setup(master, sub) -> None:
     _no_inherited_headers_footers(master, own)
 
 
+def take_newest_mode(master, books) -> None:
+    """The merged document is laid out for the newest Word among the files:
+    the master takes that file's compatibility settings, and its own tables
+    keep their place under the other rule. Laying newer files out the old
+    way moved their lines and pages; an old file laid out the new way keeps
+    them, its tables placed as in place_tables."""
+    newest = max(books, key=word_mode)
+    if word_mode(newest) <= word_mode(master):
+        return
+    place_tables(newest, master)
+    settings = master.settings.element
+    for old in settings.findall(W + "compat"):
+        settings.remove(old)
+    compat = newest.settings.element.find(W + "compat")
+    if compat is not None:
+        _place_compat(settings, deepcopy(compat))
+
+
 def merge_docx(files, out_path) -> None:
     """Files in order into one .docx, each part with its own page setup and look."""
     books = [Document(path) for path in files]
     master = books[0]
+    take_newest_mode(master, books[1:])
     composer = Composer(master)
     for n, sub in enumerate(books[1:], start=2):
         keep_look(master, sub, n)
+        place_tables(master, sub)
         end_part(master)
         composer.append(sub)
         take_page_setup(master, sub)

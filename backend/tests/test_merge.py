@@ -195,9 +195,9 @@ def drawn(path) -> list:
 @pytest.mark.parametrize("order", [("report", "form", "again"), ("form", "report", "again")])
 def test_merged_word_files_each_keep_their_own_look(api, files, order):
     """Page setup, fonts, sizes, alignment, line spacing, spacing, indents and
-    headers of each file: its pages in the merged document are drawn as the
-    file alone, though the files set all of these differently, whichever
-    comes first."""
+    table places of each file: its pages in the merged document are drawn as
+    the file alone, though the files set all of these differently and the
+    form is saved in Word 2003 mode, whether it comes first or not."""
     made = {"report": fx.word_look(files, "report.docx", "report", "alpha beta gamma delta epsilon zeta"),
             "form": fx.word_look(files, "form.docx", "form", "omega psi chi phi upsilon tau"),
             "again": fx.word_look(files, "report2.docx", "report", "kappa lambda mu nu xi omicron")}
@@ -205,6 +205,21 @@ def test_merged_word_files_each_keep_their_own_look(api, files, order):
     result = files / "merged.docx"
     result.write_bytes(data)
     assert looks_alike(drawn(result), [page for name in order for page in drawn(made[name])])
+
+
+def test_merged_word_document_takes_the_newest_word_mode(api, files):
+    """Word lays text out by one compatibility mode per document; the newest
+    of the files is the one the merged document keeps, though an older file
+    comes first, so it does not open in Compatibility Mode."""
+    import io
+    import re
+    import zipfile
+    form = fx.word_look(files, "form.docx", "form", "omega psi chi phi upsilon tau")
+    report = fx.word_look(files, "report.docx", "report", "alpha beta gamma delta epsilon zeta")
+    _, data = merged(api, [api.upload(form), api.upload(report)], "docx")
+    settings = zipfile.ZipFile(io.BytesIO(data)).read("word/settings.xml").decode()
+    assert re.findall(r'w:name="compatibilityMode"[^>]*w:val="(\d+)"', settings) == ["15"]
+    assert "doNotBreakWrappedTables" not in settings
 
 
 def test_merged_word_styles_say_what_word_reads(api, files):

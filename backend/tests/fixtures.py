@@ -901,18 +901,26 @@ WORD_LOOKS = {
                "spacing": 'w:after="0" w:line="360" w:lineRule="auto"',
                "default_ppr": '<w:spacing w:after="160" w:line="259" w:lineRule="auto"/>', "default_rpr": "",
                "theme_fonts": True, "header": None, "starts": "continuous",
-               "margins": (850, 850, 850, 1417), "landscape": False,
+               "margins": (850, 850, 850, 1417), "landscape": False, "compat": 15,
                "note": ("Report note", '<w:i/><w:sz w:val="32"/>'), "plain_cell_margin": 108},
     # a form: Arial 11, left, no first-line indent, narrow margins, landscape; Normal sets
     # only the line spacing: the space below is what Word assumes (none), the dark blue
-    # and the left indent come from the form's defaults;
-    # its defaults name no font
+    # and the left indent come from the form's defaults; saved in Word 2003 mode
+    # (tables placed by the old rule); its defaults name no font
     "form": {"font": "Arial", "size": 11, "align": "left", "indent": 0,
              "spacing": 'w:line="276" w:lineRule="auto"', "default_ppr": '<w:ind w:left="360"/>',
              "default_rpr": '<w:b/><w:color w:val="1F3864"/>', "theme_fonts": False, "header": "Form header",
-             "margins": (426, 851, 567, 992), "landscape": True,
+             "margins": (426, 851, 567, 992), "landscape": True, "compat": 11,
              "note": ("Form note", '<w:b/><w:color w:val="C00000"/><w:sz w:val="18"/>'), "plain_cell_margin": 400},
 }
+
+
+# what Word and LibreOffice write into a file kept in Word 2003 mode
+OLD_WORD_FLAGS = ("<w:doNotBreakWrappedTables/><w:useNormalStyleForList/><w:doNotUseIndentAsNumberingTabStop/>"
+                  "<w:useAltKinsokuLineBreakRules/><w:allowSpaceOfSameStyleInTable/><w:doNotSuppressIndentation/>"
+                  "<w:doNotAutofitConstrainedTables/><w:autofitToFirstFixedWidthCell/><w:displayHangulFixedWidth/>"
+                  "<w:splitPgBreakAndParaMark/><w:doNotVertAlignCellWithSp/><w:doNotBreakConstrainedForcedTable/>"
+                  "<w:doNotVertAlignInTxbx/><w:useAnsiKerningPairs/><w:cachedColBalance/>")
 
 
 def word_look(directory: Path, name: str, look: str, words: str, local_ids: bool = False) -> Path:
@@ -960,6 +968,12 @@ def word_look(directory: Path, name: str, look: str, words: str, local_ids: bool
         section.start_type = WD_SECTION.CONTINUOUS
     if v.get("header"):
         section.header.paragraphs[0].text = v["header"]
+    settings = doc.settings.element
+    for compat in settings.findall(qn("w:compat")):
+        settings.remove(compat)
+    flags = OLD_WORD_FLAGS if v["compat"] < 15 else ""
+    settings.append(parse_xml(f'<w:compat {nsdecls("w")}>{flags}<w:compatSetting w:name="compatibilityMode" '
+                              f'w:uri="http://schemas.microsoft.com/office/word" w:val="{v["compat"]}"/></w:compat>'))
     for n in range(3):
         doc.add_paragraph(" ".join([f"{w}{n}" for w in words.split()] * 6))
         if n == 0:      # not first: space above a page's first line is a document-wide setting
