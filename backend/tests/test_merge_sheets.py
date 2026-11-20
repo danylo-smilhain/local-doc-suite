@@ -3,6 +3,7 @@ file, in the order the files were given, each sheet as it was."""
 import io
 
 import fixtures as fx
+from conftest import needs_libreoffice
 from openpyxl import load_workbook
 from test_merge import merged
 
@@ -74,3 +75,29 @@ def test_a_chart_comes_along_and_still_draws_its_own_sheet(api, files):
     charts = book["Sheet1 (2)"]._charts
     assert len(charts) == 1 and book["Sheet1"]._charts == []
     assert charts[0].series[0].val.numRef.f == "'Sheet1 (2)'!$A$1:$A$3"
+
+
+def as_xls(path):
+    """The same workbook saved by LibreOffice as Excel 97-2003 (.xls)."""
+    from app.engines import engine_libreoffice
+    return type(path)(engine_libreoffice(str(path), str(path.parent), "xls"))
+
+
+def xls_book(data: bytes, files):
+    from app.engines import engine_libreoffice
+    xls = files / "result.xls"
+    xls.write_bytes(data)
+    return load_workbook(engine_libreoffice(str(xls), str(files), "xlsx"))
+
+
+@needs_libreoffice
+def test_merge_xls_gives_one_xls_with_every_sheet(api, files):
+    first = as_xls(fx.workbook(files, "a.xlsx", {"Sales": [["Jan", 10]], "Data": [[1]]}))
+    second = as_xls(fx.workbook(files, "b.xlsx", {"Data": [[2]], "Sum": [["=Data!A1*3"]]}))
+    _, data = merged(api, [api.upload(first), api.upload(second)], "xls")
+    assert data[:8] == bytes.fromhex("D0CF11E0A1B11AE1")        # Excel 97-2003, not xlsx renamed
+    book = xls_book(data, files)
+    assert book.sheetnames == ["Sales", "Data", "Data (2)", "Sum"]
+    assert values(book["Sales"]) == [["Jan", 10]]
+    assert book["Data (2)"]["A1"].value == 2
+    assert book["Sum"]["A1"].value == "='Data (2)'!A1*3"

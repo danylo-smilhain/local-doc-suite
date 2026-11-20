@@ -554,6 +554,16 @@ def merge_xlsx(job: Job) -> None:
     merge_workbooks(job.in_paths, job.out_path)
 
 
+def merge_xls(job: Job) -> None:
+    """openpyxl reads only .xlsx: each .xls goes there and the result comes
+    back through LibreOffice, in a folder of its own so nothing is left."""
+    with tempfile.TemporaryDirectory(dir=OUTPUT_DIR) as tmp:
+        books = [engine_libreoffice(p, tmp, "xlsx") for p in job.in_paths]
+        merged = os.path.join(tmp, "merged.xlsx")
+        merge_workbooks(books, merged)
+        shutil.move(engine_libreoffice(merged, tmp, "xls"), job.out_path)
+
+
 def merge_concat_then_pandoc(job: Job) -> None:
     temp_txt = _tmp("temp", "txt")
     with open(temp_txt, "w", encoding="utf-8") as f:
@@ -574,6 +584,7 @@ MERGE: dict[tuple[str, str], Handler] = {
     (ANY, "md"): merge_as_text,
     (ANY, "html"): merge_as_text,
     ("xlsx", "xlsx"): merge_xlsx,
+    ("xls", "xls"): merge_xls,
 }
 
 
