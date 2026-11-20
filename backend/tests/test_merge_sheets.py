@@ -66,6 +66,14 @@ def test_a_merged_sheet_keeps_its_look(api, files):
     assert [str(r) for r in ws.merged_cells.ranges] == ["A1:C1"]
     assert ws.freeze_panes == "A3"
     assert ws.sheet_properties.tabColor.rgb == "FF00B050"
+    assert ws["E5"].fill.fgColor.rgb == "FF92D050"
+    assert ws["A3"].hyperlink.target == "https://example.com/tea"
+    assert ws["A3"].comment.text == "Green tea"
+    assert [str(dv.sqref) for dv in ws.data_validations.dataValidation] == ["D3"]
+    assert [str(cf.sqref) for cf in ws.conditional_formatting] == ["B3:B10"]
+    assert len(ws._images) == 1
+    book = ws.parent
+    assert book["Notes"].sheet_state == "hidden" and book["Notes"]["A1"].value == "internal"
 
 
 def test_a_chart_comes_along_and_still_draws_its_own_sheet(api, files):

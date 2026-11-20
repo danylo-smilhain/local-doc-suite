@@ -831,9 +831,18 @@ def workbook(directory: Path, name: str, sheets: dict[str, list[list]]) -> Path:
 def styled_workbook(directory: Path, name: str = "styled.xlsx") -> Path:
     """One sheet "Report" with what a table is more than its values:
     a bold red header on yellow, a money format, a wide column, a tall row,
-    a merged title, frozen panes, a hidden column and a tab colour."""
+    a merged title, frozen panes, a hidden column, a tab colour, a coloured
+    empty cell, a link, a comment, a drop-down list, a conditional colour and
+    a picture; and a hidden sheet "Notes" after it."""
+    import io
+
     from openpyxl import Workbook
+    from openpyxl.comments import Comment
+    from openpyxl.drawing.image import Image as XLImage
+    from openpyxl.formatting.rule import CellIsRule
     from openpyxl.styles import Font, PatternFill
+    from openpyxl.worksheet.datavalidation import DataValidation
+    from PIL import Image
     path = directory / name
     wb = Workbook()
     ws = wb.active
@@ -851,6 +860,20 @@ def styled_workbook(directory: Path, name: str = "styled.xlsx") -> Path:
     ws.row_dimensions[2].height = 40
     ws.freeze_panes = "A3"
     ws.sheet_properties.tabColor = "FF00B050"
+    ws["E5"].fill = PatternFill("solid", fgColor="FF92D050")      # a coloured empty cell
+    ws["A3"].hyperlink = "https://example.com/tea"
+    ws["A3"].comment = Comment("Green tea", "Olena")
+    choice = DataValidation(type="list", formula1='"yes,no"')
+    choice.add("D3")
+    ws.add_data_validation(choice)
+    ws.conditional_formatting.add("B3:B10", CellIsRule(operator="greaterThan", formula=["10"],
+                                                       fill=PatternFill("solid", bgColor="FFFFC7CE")))
+    logo = io.BytesIO()
+    Image.new("RGB", (40, 20), "navy").save(logo, "PNG")
+    ws.add_image(XLImage(logo), "F2")
+    notes = wb.create_sheet("Notes")
+    notes["A1"] = "internal"
+    notes.sheet_state = "hidden"
     wb.save(str(path))
     return path
 
