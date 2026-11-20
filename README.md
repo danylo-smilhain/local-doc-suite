@@ -58,7 +58,15 @@ PDF or DOCX; TXT → MD; EPUB → EPUB; FB2 → FB2; any text-readable inputs �
 TXT, MD or HTML; XLSX → XLSX and XLS → XLS: every sheet of every file in
 one workbook, in upload order, with its formatting, formulas, images and
 charts; a sheet whose name is taken gets "Name (2)", and its file's formulas
-and charts follow the new name (openpyxl, XLS through LibreOffice).
+and charts follow the new name (openpyxl, XLS through LibreOffice). DOCX +
+DOCX → DOCX keeps each file as it was: each starts a section with its own
+page size, orientation, margins, headers and footers (a file without them
+gets empty ones, not the previous file's); a style named like one of an earlier
+file's but defined otherwise gets "Name (2)", and a file's document
+defaults go with it, so fonts, sizes, alignment, line spacing, spacing and
+indents stay its own; the merged file takes the newest Word compatibility
+mode among the files, and tables of a file saved in another mode keep their
+place.
 
 **Known limitation (OCR and look-alike letters):** OCR reads Ukrainian,
 Russian and English together. A word made only of letters that look the same
