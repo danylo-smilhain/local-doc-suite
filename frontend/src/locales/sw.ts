@@ -81,6 +81,8 @@ const sw = {
     'merge-txt': { t: "Unganisha TXT", d: "Unganisha faili kadhaa za TXT." },
     'merge-md': { t: "Unganisha Markdown", d: "Unganisha faili kadhaa za MD." },
     'merge-pptx': { t: "Unganisha PPTX", d: "Unganisha faili kadhaa za PPTX." },
+    'merge-xlsx': { t: "Unganisha XLSX", d: "Unganisha faili kadhaa za XLSX." },
+    'merge-xls': { t: "Unganisha XLS", d: "Unganisha faili kadhaa za XLS." },
     'merge-html': { t: "Unganisha HTML", d: "Unganisha faili kadhaa za HTML." },
     'merge-epub': { t: "Unganisha EPUB", d: "Unganisha vitabu kadhaa vya EPUB kuwa kimoja." },
     'merge-fb2': { t: "Unganisha FB2", d: "Unganisha vitabu kadhaa vya FB2 kuwa kimoja." },

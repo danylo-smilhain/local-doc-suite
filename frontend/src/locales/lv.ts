@@ -81,6 +81,8 @@ const lv = {
     'merge-txt': { t: "Apvienot TXT", d: "Apvienojiet vairākus TXT failus." },
     'merge-md': { t: "Apvienot Markdown", d: "Apvienojiet vairākus MD failus." },
     'merge-pptx': { t: "Apvienot PPTX", d: "Apvienojiet vairākus PPTX failus." },
+    'merge-xlsx': { t: "Apvienot XLSX", d: "Apvienojiet vairākus XLSX failus." },
+    'merge-xls': { t: "Apvienot XLS", d: "Apvienojiet vairākus XLS failus." },
     'merge-html': { t: "Apvienot HTML", d: "Apvienojiet vairākus HTML failus." },
     'merge-epub': { t: "Apvienot EPUB", d: "Apvienojiet vairākas EPUB grāmatas vienā." },
     'merge-fb2': { t: "Apvienot FB2", d: "Apvienojiet vairākas FB2 grāmatas vienā." },

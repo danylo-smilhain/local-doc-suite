@@ -81,6 +81,8 @@ const hu = {
     'merge-txt': { t: "TXT egyesítése", d: "Több TXT-fájl egyesítése." },
     'merge-md': { t: "Markdown egyesítése", d: "Több MD-fájl egyesítése." },
     'merge-pptx': { t: "PPTX egyesítése", d: "Több PPTX-fájl egyesítése." },
+    'merge-xlsx': { t: "XLSX egyesítése", d: "Több XLSX-fájl egyesítése." },
+    'merge-xls': { t: "XLS egyesítése", d: "Több XLS-fájl egyesítése." },
     'merge-html': { t: "HTML egyesítése", d: "Több HTML-fájl egyesítése." },
     'merge-epub': { t: "EPUB egyesítése", d: "Több EPUB-könyv egyesítése egybe." },
     'merge-fb2': { t: "FB2 egyesítése", d: "Több FB2-könyv egyesítése egybe." },

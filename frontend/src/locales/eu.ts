@@ -81,6 +81,8 @@ const eu = {
     'merge-txt': { t: "Batu TXT", d: "Batu TXT fitxategi bat baino gehiago." },
     'merge-md': { t: "Batu Markdown", d: "Batu MD fitxategi bat baino gehiago." },
     'merge-pptx': { t: "Batu PPTX", d: "Batu PPTX fitxategi bat baino gehiago." },
+    'merge-xlsx': { t: "Batu XLSX", d: "Batu XLSX fitxategi bat baino gehiago." },
+    'merge-xls': { t: "Batu XLS", d: "Batu XLS fitxategi bat baino gehiago." },
     'merge-html': { t: "Batu HTML", d: "Batu HTML fitxategi bat baino gehiago." },
     'merge-epub': { t: "Batu EPUB", d: "Batu EPUB liburu bat baino gehiago liburu bakar batean." },
     'merge-fb2': { t: "Batu FB2", d: "Batu FB2 liburu bat baino gehiago liburu bakar batean." },

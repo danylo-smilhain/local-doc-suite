@@ -81,6 +81,8 @@ const la = {
     'merge-txt': { t: "TXT coniunge", d: "Plures fasciculos TXT coniunge." },
     'merge-md': { t: "Markdown coniunge", d: "Plures fasciculos MD coniunge." },
     'merge-pptx': { t: "PPTX coniunge", d: "Plures fasciculos PPTX coniunge." },
+    'merge-xlsx': { t: "XLSX coniunge", d: "Plures fasciculos XLSX coniunge." },
+    'merge-xls': { t: "XLS coniunge", d: "Plures fasciculos XLS coniunge." },
     'merge-html': { t: "HTML coniunge", d: "Plures fasciculos HTML coniunge." },
     'merge-epub': { t: "EPUB coniunge", d: "Plures libros EPUB in unum coniunge." },
     'merge-fb2': { t: "FB2 coniunge", d: "Plures libros FB2 in unum coniunge." },

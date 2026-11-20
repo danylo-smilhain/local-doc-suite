@@ -81,6 +81,8 @@ const ga = {
     'merge-txt': { t: "Cumaisc TXT", d: "Comhcheangail roinnt comhad TXT." },
     'merge-md': { t: "Cumaisc Markdown", d: "Comhcheangail roinnt comhad MD." },
     'merge-pptx': { t: "Cumaisc PPTX", d: "Comhcheangail roinnt comhad PPTX." },
+    'merge-xlsx': { t: "Cumaisc XLSX", d: "Comhcheangail roinnt comhad XLSX." },
+    'merge-xls': { t: "Cumaisc XLS", d: "Comhcheangail roinnt comhad XLS." },
     'merge-html': { t: "Cumaisc HTML", d: "Comhcheangail roinnt comhad HTML." },
     'merge-epub': { t: "Cumaisc EPUB", d: "Comhcheangail roinnt leabhar EPUB in aon leabhar amháin." },
     'merge-fb2': { t: "Cumaisc FB2", d: "Comhcheangail roinnt leabhar FB2 in aon leabhar amháin." },

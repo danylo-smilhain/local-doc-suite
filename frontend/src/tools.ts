@@ -55,6 +55,8 @@ export const toolsConfig: Tool[] = [
   { id: 'merge-txt', icon: icon({ from: 'txt', to: 'txt', kind: 'merge' }), out: 'txt', category: 'merge' },
   { id: 'merge-md', icon: icon({ from: 'md', to: 'md', kind: 'merge' }), out: 'md', category: 'merge' },
   { id: 'merge-pptx', icon: icon({ from: 'pptx', to: 'pptx', kind: 'merge' }), out: 'pptx', category: 'merge' },
+  { id: 'merge-xlsx', icon: icon({ from: 'xlsx', to: 'xlsx', kind: 'merge' }), out: 'xlsx', category: 'merge' },
+  { id: 'merge-xls', icon: icon({ from: 'xls', to: 'xls', kind: 'merge' }), out: 'xls', category: 'merge' },
   { id: 'merge-html', icon: icon({ from: 'html', to: 'html', kind: 'merge' }), out: 'html', category: 'merge' },
   { id: 'merge-epub', icon: icon({ from: 'epub', to: 'epub', kind: 'merge' }), out: 'epub', category: 'merge' },
   { id: 'merge-fb2', icon: icon({ from: 'fb2', to: 'fb2', kind: 'merge' }), out: 'fb2', category: 'merge' },
@@ -70,7 +72,7 @@ export const toolsConfig: Tool[] = [
 // Меню «All tools»: единственное место, где инструменты сгруппированы по колонкам.
 // Ключ — категория (подпись в t.menuCategories), значение — упорядоченные id из toolsConfig.
 export const TOOL_MENU = {
-  merge: ['merge-docx', 'merge-pdf', 'merge-txt', 'merge-md', 'merge-pptx', 'merge-html', 'merge-epub',
+  merge: ['merge-docx', 'merge-pdf', 'merge-txt', 'merge-md', 'merge-pptx', 'merge-xlsx', 'merge-xls', 'merge-html', 'merge-epub',
     'merge-fb2', 'merge-txt-md', 'merge-docx-md', 'merge-pdf-md', 'merge-html-md', 'merge-html-pdf'],
   convertFromPdf: ['pdf-to-txt', 'pdf-to-md', 'pdf-to-word', 'pdf-to-word-ocr', 'pdf-to-epub', 'pdf-to-fb2', 'pdf-to-pptx',
     'pdf-to-pptx-ocr'],

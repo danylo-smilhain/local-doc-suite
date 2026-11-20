@@ -81,6 +81,8 @@ const is = {
     'merge-txt': { t: "Sameina TXT", d: "Sameinaðu margar TXT-skrár." },
     'merge-md': { t: "Sameina Markdown", d: "Sameinaðu margar MD-skrár." },
     'merge-pptx': { t: "Sameina PPTX", d: "Sameinaðu margar PPTX-skrár." },
+    'merge-xlsx': { t: "Sameina XLSX", d: "Sameinaðu margar XLSX-skrár." },
+    'merge-xls': { t: "Sameina XLS", d: "Sameinaðu margar XLS-skrár." },
     'merge-html': { t: "Sameina HTML", d: "Sameinaðu margar HTML-skrár." },
     'merge-epub': { t: "Sameina EPUB", d: "Sameinaðu margar EPUB-bækur í eina." },
     'merge-fb2': { t: "Sameina FB2", d: "Sameinaðu margar FB2-bækur í eina." },

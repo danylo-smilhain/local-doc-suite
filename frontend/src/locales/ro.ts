@@ -81,6 +81,8 @@ const ro = {
     'merge-txt': { t: "Unește TXT", d: "Combină mai multe fișiere TXT." },
     'merge-md': { t: "Unește Markdown", d: "Combină mai multe fișiere MD." },
     'merge-pptx': { t: "Unește PPTX", d: "Combină mai multe fișiere PPTX." },
+    'merge-xlsx': { t: "Unește XLSX", d: "Combină mai multe fișiere XLSX." },
+    'merge-xls': { t: "Unește XLS", d: "Combină mai multe fișiere XLS." },
     'merge-html': { t: "Unește HTML", d: "Combină mai multe fișiere HTML." },
     'merge-epub': { t: "Unește EPUB", d: "Combină mai multe cărți EPUB într-una singură." },
     'merge-fb2': { t: "Unește FB2", d: "Combină mai multe cărți FB2 într-una singură." },

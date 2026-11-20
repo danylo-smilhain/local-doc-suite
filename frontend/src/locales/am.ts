@@ -81,6 +81,8 @@ const am = {
     'merge-txt': { t: "TXT አዋህድ", d: "በርካታ የ TXT ፋይሎችን ያዋህዱ።" },
     'merge-md': { t: "Markdown አዋህድ", d: "በርካታ የ MD ፋይሎችን ያዋህዱ።" },
     'merge-pptx': { t: "PPTX አዋህድ", d: "በርካታ የ PPTX ፋይሎችን ያዋህዱ።" },
+    'merge-xlsx': { t: "XLSX አዋህድ", d: "በርካታ የ XLSX ፋይሎችን ያዋህዱ።" },
+    'merge-xls': { t: "XLS አዋህድ", d: "በርካታ የ XLS ፋይሎችን ያዋህዱ።" },
     'merge-html': { t: "HTML አዋህድ", d: "በርካታ የ HTML ፋይሎችን ያዋህዱ።" },
     'merge-epub': { t: "EPUB አዋህድ", d: "በርካታ የ EPUB መጻሕፍትን ወደ አንድ መጽሐፍ ያዋህዱ።" },
     'merge-fb2': { t: "FB2 አዋህድ", d: "በርካታ የ FB2 መጻሕፍትን ወደ አንድ መጽሐፍ ያዋህዱ።" },

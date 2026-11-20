@@ -81,6 +81,8 @@ const nb = {
     'merge-txt': { t: "Slå sammen TXT", d: "Kombiner flere TXT-filer." },
     'merge-md': { t: "Slå sammen Markdown", d: "Kombiner flere MD-filer." },
     'merge-pptx': { t: "Slå sammen PPTX", d: "Kombiner flere PPTX-filer." },
+    'merge-xlsx': { t: "Slå sammen XLSX", d: "Kombiner flere XLSX-filer." },
+    'merge-xls': { t: "Slå sammen XLS", d: "Kombiner flere XLS-filer." },
     'merge-html': { t: "Slå sammen HTML", d: "Kombiner flere HTML-filer." },
     'merge-epub': { t: "Slå sammen EPUB", d: "Kombiner flere EPUB-bøker til én." },
     'merge-fb2': { t: "Slå sammen FB2", d: "Kombiner flere FB2-bøker til én." },

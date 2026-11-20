@@ -81,6 +81,8 @@ const pl = {
     'merge-txt': { t: "Połącz TXT", d: "Połącz kilka plików TXT." },
     'merge-md': { t: "Połącz Markdown", d: "Połącz kilka plików MD." },
     'merge-pptx': { t: "Połącz PPTX", d: "Połącz kilka plików PPTX." },
+    'merge-xlsx': { t: "Połącz XLSX", d: "Połącz kilka plików XLSX." },
+    'merge-xls': { t: "Połącz XLS", d: "Połącz kilka plików XLS." },
     'merge-html': { t: "Połącz HTML", d: "Połącz kilka plików HTML." },
     'merge-epub': { t: "Połącz EPUB", d: "Połącz kilka książek EPUB w jedną." },
     'merge-fb2': { t: "Połącz FB2", d: "Połącz kilka książek FB2 w jedną." },

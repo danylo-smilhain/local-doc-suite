@@ -81,6 +81,8 @@ const ko = {
     'merge-txt': { t: "TXT 병합", d: "여러 TXT 파일을 하나로 합칩니다." },
     'merge-md': { t: "Markdown 병합", d: "여러 MD 파일을 하나로 합칩니다." },
     'merge-pptx': { t: "PPTX 병합", d: "여러 PPTX 파일을 하나로 합칩니다." },
+    'merge-xlsx': { t: "XLSX 병합", d: "여러 XLSX 파일을 하나로 합칩니다." },
+    'merge-xls': { t: "XLS 병합", d: "여러 XLS 파일을 하나로 합칩니다." },
     'merge-html': { t: "HTML 병합", d: "여러 HTML 파일을 하나로 합칩니다." },
     'merge-epub': { t: "EPUB 병합", d: "여러 EPUB 책을 한 권으로 합칩니다." },
     'merge-fb2': { t: "FB2 병합", d: "여러 FB2 책을 한 권으로 합칩니다." },

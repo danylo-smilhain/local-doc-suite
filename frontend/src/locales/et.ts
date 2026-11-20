@@ -81,6 +81,8 @@ const et = {
     'merge-txt': { t: "Ühenda TXT", d: "Ühenda mitu TXT-faili." },
     'merge-md': { t: "Ühenda Markdown", d: "Ühenda mitu MD-faili." },
     'merge-pptx': { t: "Ühenda PPTX", d: "Ühenda mitu PPTX-faili." },
+    'merge-xlsx': { t: "Ühenda XLSX", d: "Ühenda mitu XLSX-faili." },
+    'merge-xls': { t: "Ühenda XLS", d: "Ühenda mitu XLS-faili." },
     'merge-html': { t: "Ühenda HTML", d: "Ühenda mitu HTML-faili." },
     'merge-epub': { t: "Ühenda EPUB", d: "Ühenda mitu EPUB-raamatut üheks." },
     'merge-fb2': { t: "Ühenda FB2", d: "Ühenda mitu FB2-raamatut üheks." },

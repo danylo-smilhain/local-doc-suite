@@ -81,6 +81,8 @@ const sq = {
     'merge-txt': { t: "Bashko TXT", d: "Kombinoni disa skedarë TXT." },
     'merge-md': { t: "Bashko Markdown", d: "Kombinoni disa skedarë MD." },
     'merge-pptx': { t: "Bashko PPTX", d: "Kombinoni disa skedarë PPTX." },
+    'merge-xlsx': { t: "Bashko XLSX", d: "Kombinoni disa skedarë XLSX." },
+    'merge-xls': { t: "Bashko XLS", d: "Kombinoni disa skedarë XLS." },
     'merge-html': { t: "Bashko HTML", d: "Kombinoni disa skedarë HTML." },
     'merge-epub': { t: "Bashko EPUB", d: "Kombinoni disa libra EPUB në një." },
     'merge-fb2': { t: "Bashko FB2", d: "Kombinoni disa libra FB2 në një." },

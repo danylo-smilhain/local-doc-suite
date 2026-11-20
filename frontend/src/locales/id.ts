@@ -81,6 +81,8 @@ const id = {
     'merge-txt': { t: "Gabungkan TXT", d: "Gabungkan beberapa berkas TXT." },
     'merge-md': { t: "Gabungkan Markdown", d: "Gabungkan beberapa berkas MD." },
     'merge-pptx': { t: "Gabungkan PPTX", d: "Gabungkan beberapa berkas PPTX." },
+    'merge-xlsx': { t: "Gabungkan XLSX", d: "Gabungkan beberapa berkas XLSX." },
+    'merge-xls': { t: "Gabungkan XLS", d: "Gabungkan beberapa berkas XLS." },
     'merge-html': { t: "Gabungkan HTML", d: "Gabungkan beberapa berkas HTML." },
     'merge-epub': { t: "Gabungkan EPUB", d: "Gabungkan beberapa buku EPUB menjadi satu." },
     'merge-fb2': { t: "Gabungkan FB2", d: "Gabungkan beberapa buku FB2 menjadi satu." },

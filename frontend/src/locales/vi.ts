@@ -81,6 +81,8 @@ const vi = {
     'merge-txt': { t: "Gộp TXT", d: "Gộp nhiều tệp TXT." },
     'merge-md': { t: "Gộp Markdown", d: "Gộp nhiều tệp MD." },
     'merge-pptx': { t: "Gộp PPTX", d: "Gộp nhiều tệp PPTX." },
+    'merge-xlsx': { t: "Gộp XLSX", d: "Gộp nhiều tệp XLSX." },
+    'merge-xls': { t: "Gộp XLS", d: "Gộp nhiều tệp XLS." },
     'merge-html': { t: "Gộp HTML", d: "Gộp nhiều tệp HTML." },
     'merge-epub': { t: "Gộp EPUB", d: "Gộp nhiều sách EPUB thành một." },
     'merge-fb2': { t: "Gộp FB2", d: "Gộp nhiều sách FB2 thành một." },

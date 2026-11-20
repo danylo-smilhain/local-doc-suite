@@ -81,6 +81,8 @@ const lb = {
     'merge-txt': { t: "TXT zesummeféieren", d: "Féiert e puer TXT-Fichieren zesummen." },
     'merge-md': { t: "Markdown zesummeféieren", d: "Féiert e puer MD-Fichieren zesummen." },
     'merge-pptx': { t: "PPTX zesummeféieren", d: "Féiert e puer PPTX-Fichieren zesummen." },
+    'merge-xlsx': { t: "XLSX zesummeféieren", d: "Féiert e puer XLSX-Fichieren zesummen." },
+    'merge-xls': { t: "XLS zesummeféieren", d: "Féiert e puer XLS-Fichieren zesummen." },
     'merge-html': { t: "HTML zesummeféieren", d: "Féiert e puer HTML-Fichieren zesummen." },
     'merge-epub': { t: "EPUB zesummeféieren", d: "Féiert e puer EPUB-Bicher zu engem zesummen." },
     'merge-fb2': { t: "FB2 zesummeféieren", d: "Féiert e puer FB2-Bicher zu engem zesummen." },

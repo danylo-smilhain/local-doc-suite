@@ -81,6 +81,8 @@ const sk = {
     'merge-txt': { t: "Zlúčiť TXT", d: "Spojte viacero súborov TXT." },
     'merge-md': { t: "Zlúčiť Markdown", d: "Spojte viacero súborov MD." },
     'merge-pptx': { t: "Zlúčiť PPTX", d: "Spojte viacero súborov PPTX." },
+    'merge-xlsx': { t: "Zlúčiť XLSX", d: "Spojte viacero súborov XLSX." },
+    'merge-xls': { t: "Zlúčiť XLS", d: "Spojte viacero súborov XLS." },
     'merge-html': { t: "Zlúčiť HTML", d: "Spojte viacero súborov HTML." },
     'merge-epub': { t: "Zlúčiť EPUB", d: "Spojte viacero kníh EPUB do jednej." },
     'merge-fb2': { t: "Zlúčiť FB2", d: "Spojte viacero kníh FB2 do jednej." },

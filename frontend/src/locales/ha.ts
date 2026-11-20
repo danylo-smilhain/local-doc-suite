@@ -81,6 +81,8 @@ const ha = {
     'merge-txt': { t: "Haɗa TXT", d: "Haɗa fayilolin TXT da yawa." },
     'merge-md': { t: "Haɗa Markdown", d: "Haɗa fayilolin MD da yawa." },
     'merge-pptx': { t: "Haɗa PPTX", d: "Haɗa fayilolin PPTX da yawa." },
+    'merge-xlsx': { t: "Haɗa XLSX", d: "Haɗa fayilolin XLSX da yawa." },
+    'merge-xls': { t: "Haɗa XLS", d: "Haɗa fayilolin XLS da yawa." },
     'merge-html': { t: "Haɗa HTML", d: "Haɗa fayilolin HTML da yawa." },
     'merge-epub': { t: "Haɗa EPUB", d: "Haɗa littattafan EPUB da yawa zuwa littafi ɗaya." },
     'merge-fb2': { t: "Haɗa FB2", d: "Haɗa littattafan FB2 da yawa zuwa littafi ɗaya." },

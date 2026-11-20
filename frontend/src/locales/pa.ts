@@ -81,6 +81,8 @@ const pa = {
     'merge-txt': { t: "TXT ਜੋੜੋ", d: "ਕਈ TXT ਫ਼ਾਈਲਾਂ ਨੂੰ ਜੋੜੋ।" },
     'merge-md': { t: "Markdown ਜੋੜੋ", d: "ਕਈ MD ਫ਼ਾਈਲਾਂ ਨੂੰ ਜੋੜੋ।" },
     'merge-pptx': { t: "PPTX ਜੋੜੋ", d: "ਕਈ PPTX ਫ਼ਾਈਲਾਂ ਨੂੰ ਜੋੜੋ।" },
+    'merge-xlsx': { t: "XLSX ਜੋੜੋ", d: "ਕਈ XLSX ਫ਼ਾਈਲਾਂ ਨੂੰ ਜੋੜੋ।" },
+    'merge-xls': { t: "XLS ਜੋੜੋ", d: "ਕਈ XLS ਫ਼ਾਈਲਾਂ ਨੂੰ ਜੋੜੋ।" },
     'merge-html': { t: "HTML ਜੋੜੋ", d: "ਕਈ HTML ਫ਼ਾਈਲਾਂ ਨੂੰ ਜੋੜੋ।" },
     'merge-epub': { t: "EPUB ਜੋੜੋ", d: "ਕਈ EPUB ਕਿਤਾਬਾਂ ਨੂੰ ਇੱਕ ਕਿਤਾਬ ਵਿੱਚ ਜੋੜੋ।" },
     'merge-fb2': { t: "FB2 ਜੋੜੋ", d: "ਕਈ FB2 ਕਿਤਾਬਾਂ ਨੂੰ ਇੱਕ ਕਿਤਾਬ ਵਿੱਚ ਜੋੜੋ।" },

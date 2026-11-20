@@ -81,6 +81,8 @@ const af = {
     'merge-txt': { t: "Voeg TXT saam", d: "Voeg verskeie TXT-lêers saam." },
     'merge-md': { t: "Voeg Markdown saam", d: "Voeg verskeie MD-lêers saam." },
     'merge-pptx': { t: "Voeg PPTX saam", d: "Voeg verskeie PPTX-lêers saam." },
+    'merge-xlsx': { t: "Voeg XLSX saam", d: "Voeg verskeie XLSX-lêers saam." },
+    'merge-xls': { t: "Voeg XLS saam", d: "Voeg verskeie XLS-lêers saam." },
     'merge-html': { t: "Voeg HTML saam", d: "Voeg verskeie HTML-lêers saam." },
     'merge-epub': { t: "Voeg EPUB saam", d: "Voeg verskeie EPUB-boeke saam in een." },
     'merge-fb2': { t: "Voeg FB2 saam", d: "Voeg verskeie FB2-boeke saam in een." },

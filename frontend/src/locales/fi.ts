@@ -81,6 +81,8 @@ const fi = {
     'merge-txt': { t: "Yhdistä TXT", d: "Yhdistä useita TXT-tiedostoja." },
     'merge-md': { t: "Yhdistä Markdown", d: "Yhdistä useita MD-tiedostoja." },
     'merge-pptx': { t: "Yhdistä PPTX", d: "Yhdistä useita PPTX-tiedostoja." },
+    'merge-xlsx': { t: "Yhdistä XLSX", d: "Yhdistä useita XLSX-tiedostoja." },
+    'merge-xls': { t: "Yhdistä XLS", d: "Yhdistä useita XLS-tiedostoja." },
     'merge-html': { t: "Yhdistä HTML", d: "Yhdistä useita HTML-tiedostoja." },
     'merge-epub': { t: "Yhdistä EPUB", d: "Yhdistä useita EPUB-kirjoja yhdeksi." },
     'merge-fb2': { t: "Yhdistä FB2", d: "Yhdistä useita FB2-kirjoja yhdeksi." },

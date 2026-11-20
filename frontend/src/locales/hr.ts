@@ -81,6 +81,8 @@ const hr = {
     'merge-txt': { t: "Spoji TXT", d: "Spojite više TXT datoteka." },
     'merge-md': { t: "Spoji Markdown", d: "Spojite više MD datoteka." },
     'merge-pptx': { t: "Spoji PPTX", d: "Spojite više PPTX datoteka." },
+    'merge-xlsx': { t: "Spoji XLSX", d: "Spojite više XLSX datoteka." },
+    'merge-xls': { t: "Spoji XLS", d: "Spojite više XLS datoteka." },
     'merge-html': { t: "Spoji HTML", d: "Spojite više HTML datoteka." },
     'merge-epub': { t: "Spoji EPUB", d: "Spojite više EPUB knjiga u jednu." },
     'merge-fb2': { t: "Spoji FB2", d: "Spojite više FB2 knjiga u jednu." },

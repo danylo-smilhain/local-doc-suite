@@ -81,6 +81,8 @@ const mt = {
     'merge-txt': { t: "Għaqqad TXT", d: "Għaqqad diversi fajls TXT." },
     'merge-md': { t: "Għaqqad Markdown", d: "Għaqqad diversi fajls MD." },
     'merge-pptx': { t: "Għaqqad PPTX", d: "Għaqqad diversi fajls PPTX." },
+    'merge-xlsx': { t: "Għaqqad XLSX", d: "Għaqqad diversi fajls XLSX." },
+    'merge-xls': { t: "Għaqqad XLS", d: "Għaqqad diversi fajls XLS." },
     'merge-html': { t: "Għaqqad HTML", d: "Għaqqad diversi fajls HTML." },
     'merge-epub': { t: "Għaqqad EPUB", d: "Għaqqad diversi kotba EPUB f'ktieb wieħed." },
     'merge-fb2': { t: "Għaqqad FB2", d: "Għaqqad diversi kotba FB2 f'ktieb wieħed." },

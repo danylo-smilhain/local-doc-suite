@@ -81,6 +81,8 @@ const yo = {
     'merge-txt': { t: "Dàpọ̀ TXT", d: "Da ọ̀pọ̀lọpọ̀ fáìlì TXT pọ̀." },
     'merge-md': { t: "Dàpọ̀ Markdown", d: "Da ọ̀pọ̀lọpọ̀ fáìlì MD pọ̀." },
     'merge-pptx': { t: "Dàpọ̀ PPTX", d: "Da ọ̀pọ̀lọpọ̀ fáìlì PPTX pọ̀." },
+    'merge-xlsx': { t: "Dàpọ̀ XLSX", d: "Da ọ̀pọ̀lọpọ̀ fáìlì XLSX pọ̀." },
+    'merge-xls': { t: "Dàpọ̀ XLS", d: "Da ọ̀pọ̀lọpọ̀ fáìlì XLS pọ̀." },
     'merge-html': { t: "Dàpọ̀ HTML", d: "Da ọ̀pọ̀lọpọ̀ fáìlì HTML pọ̀." },
     'merge-epub': { t: "Dàpọ̀ EPUB", d: "Da ọ̀pọ̀lọpọ̀ ìwé EPUB pọ̀ sí ìwé kan." },
     'merge-fb2': { t: "Dàpọ̀ FB2", d: "Da ọ̀pọ̀lọpọ̀ ìwé FB2 pọ̀ sí ìwé kan." },

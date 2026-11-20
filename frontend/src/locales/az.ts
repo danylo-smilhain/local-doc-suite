@@ -81,6 +81,8 @@ const az = {
     'merge-txt': { t: "TXT birləşdir", d: "Bir neçə TXT faylını birləşdirin." },
     'merge-md': { t: "Markdown birləşdir", d: "Bir neçə MD faylını birləşdirin." },
     'merge-pptx': { t: "PPTX birləşdir", d: "Bir neçə PPTX faylını birləşdirin." },
+    'merge-xlsx': { t: "XLSX birləşdir", d: "Bir neçə XLSX faylını birləşdirin." },
+    'merge-xls': { t: "XLS birləşdir", d: "Bir neçə XLS faylını birləşdirin." },
     'merge-html': { t: "HTML birləşdir", d: "Bir neçə HTML faylını birləşdirin." },
     'merge-epub': { t: "EPUB birləşdir", d: "Bir neçə EPUB kitabını bir kitabda birləşdirin." },
     'merge-fb2': { t: "FB2 birləşdir", d: "Bir neçə FB2 kitabını bir kitabda birləşdirin." },

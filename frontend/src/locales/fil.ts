@@ -81,6 +81,8 @@ const fil = {
     'merge-txt': { t: "Pagsamahin ang TXT", d: "Pagsamahin ang ilang TXT file." },
     'merge-md': { t: "Pagsamahin ang Markdown", d: "Pagsamahin ang ilang MD file." },
     'merge-pptx': { t: "Pagsamahin ang PPTX", d: "Pagsamahin ang ilang PPTX file." },
+    'merge-xlsx': { t: "Pagsamahin ang XLSX", d: "Pagsamahin ang ilang XLSX file." },
+    'merge-xls': { t: "Pagsamahin ang XLS", d: "Pagsamahin ang ilang XLS file." },
     'merge-html': { t: "Pagsamahin ang HTML", d: "Pagsamahin ang ilang HTML file." },
     'merge-epub': { t: "Pagsamahin ang EPUB", d: "Pagsamahin ang ilang EPUB na aklat sa iisa." },
     'merge-fb2': { t: "Pagsamahin ang FB2", d: "Pagsamahin ang ilang FB2 na aklat sa iisa." },

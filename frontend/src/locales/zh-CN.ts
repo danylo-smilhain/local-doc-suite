@@ -81,6 +81,8 @@ const zhCN = {
     'merge-txt': { t: "合并 TXT", d: "合并多个 TXT 文件。" },
     'merge-md': { t: "合并 Markdown", d: "合并多个 MD 文件。" },
     'merge-pptx': { t: "合并 PPTX", d: "合并多个 PPTX 文件。" },
+    'merge-xlsx': { t: "合并 XLSX", d: "合并多个 XLSX 文件。" },
+    'merge-xls': { t: "合并 XLS", d: "合并多个 XLS 文件。" },
     'merge-html': { t: "合并 HTML", d: "合并多个 HTML 文件。" },
     'merge-epub': { t: "合并 EPUB", d: "将多本 EPUB 图书合并为一本。" },
     'merge-fb2': { t: "合并 FB2", d: "将多本 FB2 图书合并为一本。" },

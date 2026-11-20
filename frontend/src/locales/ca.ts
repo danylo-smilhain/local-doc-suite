@@ -81,6 +81,8 @@ const ca = {
     'merge-txt': { t: "Combina TXT", d: "Combina diversos fitxers TXT." },
     'merge-md': { t: "Combina Markdown", d: "Combina diversos fitxers MD." },
     'merge-pptx': { t: "Combina PPTX", d: "Combina diversos fitxers PPTX." },
+    'merge-xlsx': { t: "Combina XLSX", d: "Combina diversos fitxers XLSX." },
+    'merge-xls': { t: "Combina XLS", d: "Combina diversos fitxers XLS." },
     'merge-html': { t: "Combina HTML", d: "Combina diversos fitxers HTML." },
     'merge-epub': { t: "Combina EPUB", d: "Combina diversos llibres EPUB en un de sol." },
     'merge-fb2': { t: "Combina FB2", d: "Combina diversos llibres FB2 en un de sol." },

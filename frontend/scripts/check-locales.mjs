@@ -73,7 +73,7 @@ try {
   }
 
   // --- ключи и строки ------------------------------------------------------
-  const FORMAT = /(?<![A-Za-z0-9])(PDF|TXT|DOCX|EPUB|FB2|AZW3|PPTX|HTML|MP3|MP4|OCR|Markdown|MD|Word)(?![A-Za-z0-9])/g;
+  const FORMAT = /(?<![A-Za-z0-9])(PDF|TXT|DOCX|EPUB|FB2|AZW3|PPTX|XLSX|XLS|HTML|MP3|MP4|OCR|Markdown|MD|Word)(?![A-Za-z0-9])/g;
   const formats = (s) => [...s.matchAll(FORMAT)].map((m) => (m[1] === 'Markdown' ? 'MD' : m[1]));
   // строки только из имен форматов и знаков («OCR», «PDF → Word») переводить не нужно
   const onlyFormats = (s) => s.replace(FORMAT, '').replace(/[\s()+\-→.,:/]/g, '') === '';

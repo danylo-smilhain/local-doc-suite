@@ -81,6 +81,8 @@ const gl = {
     'merge-txt': { t: "Combinar TXT", d: "Combina varios ficheiros TXT." },
     'merge-md': { t: "Combinar Markdown", d: "Combina varios ficheiros MD." },
     'merge-pptx': { t: "Combinar PPTX", d: "Combina varios ficheiros PPTX." },
+    'merge-xlsx': { t: "Combinar XLSX", d: "Combina varios ficheiros XLSX." },
+    'merge-xls': { t: "Combinar XLS", d: "Combina varios ficheiros XLS." },
     'merge-html': { t: "Combinar HTML", d: "Combina varios ficheiros HTML." },
     'merge-epub': { t: "Combinar EPUB", d: "Combina varios libros EPUB nun só." },
     'merge-fb2': { t: "Combinar FB2", d: "Combina varios libros FB2 nun só." },

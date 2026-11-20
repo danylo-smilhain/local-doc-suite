@@ -81,6 +81,8 @@ const ltg = {
     'merge-txt': { t: "Apvīnuot TXT", d: "Apvīnoj vairuokus TXT failus." },
     'merge-md': { t: "Apvīnuot Markdown", d: "Apvīnoj vairuokus MD failus." },
     'merge-pptx': { t: "Apvīnuot PPTX", d: "Apvīnoj vairuokus PPTX failus." },
+    'merge-xlsx': { t: "Apvīnuot XLSX", d: "Apvīnoj vairuokus XLSX failus." },
+    'merge-xls': { t: "Apvīnuot XLS", d: "Apvīnoj vairuokus XLS failus." },
     'merge-html': { t: "Apvīnuot HTML", d: "Apvīnoj vairuokus HTML failus." },
     'merge-epub': { t: "Apvīnuot EPUB", d: "Apvīnoj vairuokys EPUB gruomotys vīnā." },
     'merge-fb2': { t: "Apvīnuot FB2", d: "Apvīnoj vairuokys FB2 gruomotys vīnā." },

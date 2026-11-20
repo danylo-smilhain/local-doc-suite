@@ -81,6 +81,8 @@ const fa = {
     'merge-txt': { t: "ادغام TXT", d: "ادغام چند فایل TXT." },
     'merge-md': { t: "ادغام Markdown", d: "ادغام چند فایل MD." },
     'merge-pptx': { t: "ادغام PPTX", d: "ادغام چند فایل PPTX." },
+    'merge-xlsx': { t: "ادغام XLSX", d: "ادغام چند فایل XLSX." },
+    'merge-xls': { t: "ادغام XLS", d: "ادغام چند فایل XLS." },
     'merge-html': { t: "ادغام HTML", d: "ادغام چند فایل HTML." },
     'merge-epub': { t: "ادغام EPUB", d: "ادغام چند کتاب EPUB در یک کتاب." },
     'merge-fb2': { t: "ادغام FB2", d: "ادغام چند کتاب FB2 در یک کتاب." },

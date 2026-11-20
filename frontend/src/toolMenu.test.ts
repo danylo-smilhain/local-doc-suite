@@ -114,3 +114,23 @@ describe('PDF to PPTX comes as two tools, like PDF to Word', () => {
     if (code !== 'en') expect(ocr.d, 'description is still English').not.toBe(english['pdf-to-pptx-ocr'].d);
   });
 });
+
+describe('Spreadsheets merge as XLSX and as XLS', () => {
+  type ToolTexts = Record<string, { t: string; d: string }>;
+  it('has both tools in toolsConfig and the Merge menu, each keeping its format', () => {
+    const outs = Object.fromEntries(toolsConfig.map((t) => [t.id, t.out]));
+    expect([outs['merge-xlsx'], outs['merge-xls']]).toEqual(['xlsx', 'xls']);
+    expect(TOOL_MENU.merge).toEqual(expect.arrayContaining(['merge-xlsx', 'merge-xls']));
+    expect(toolsConfig.find((t) => t.id === 'merge-xls')?.category).toBe('merge');
+  });
+  it.each(LANGUAGES.map((l) => l.code))('%s names the format in each title and translates the descriptions', async (code) => {
+    const tools = (await loadMessages(code)).tools as ToolTexts;
+    const english = en.tools as ToolTexts;
+    expect(tools['merge-xlsx'].t).toContain('XLSX');
+    expect(tools['merge-xls'].t).toMatch(/XLS(?!X)/);
+    expect(tools['merge-xls'].t).not.toContain('XLSX');
+    if (code !== 'en') {
+      for (const id of ['merge-xlsx', 'merge-xls']) expect(tools[id].d, `${id} description is still English`).not.toBe(english[id].d);
+    }
+  });
+});

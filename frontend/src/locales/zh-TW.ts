@@ -81,6 +81,8 @@ const zhTW = {
     'merge-txt': { t: "合併 TXT", d: "合併多個 TXT 檔案。" },
     'merge-md': { t: "合併 Markdown", d: "合併多個 MD 檔案。" },
     'merge-pptx': { t: "合併 PPTX", d: "合併多個 PPTX 檔案。" },
+    'merge-xlsx': { t: "合併 XLSX", d: "合併多個 XLSX 檔案。" },
+    'merge-xls': { t: "合併 XLS", d: "合併多個 XLS 檔案。" },
     'merge-html': { t: "合併 HTML", d: "合併多個 HTML 檔案。" },
     'merge-epub': { t: "合併 EPUB", d: "將多本 EPUB 書籍合併為一本。" },
     'merge-fb2': { t: "合併 FB2", d: "將多本 FB2 書籍合併為一本。" },

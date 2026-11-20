@@ -81,6 +81,8 @@ const lt = {
     'merge-txt': { t: "Sujungti TXT", d: "Sujunkite kelis TXT failus." },
     'merge-md': { t: "Sujungti Markdown", d: "Sujunkite kelis MD failus." },
     'merge-pptx': { t: "Sujungti PPTX", d: "Sujunkite kelis PPTX failus." },
+    'merge-xlsx': { t: "Sujungti XLSX", d: "Sujunkite kelis XLSX failus." },
+    'merge-xls': { t: "Sujungti XLS", d: "Sujunkite kelis XLS failus." },
     'merge-html': { t: "Sujungti HTML", d: "Sujunkite kelis HTML failus." },
     'merge-epub': { t: "Sujungti EPUB", d: "Sujunkite kelias EPUB knygas į vieną." },
     'merge-fb2': { t: "Sujungti FB2", d: "Sujunkite kelias FB2 knygas į vieną." },

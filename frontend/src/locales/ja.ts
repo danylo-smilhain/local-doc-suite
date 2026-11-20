@@ -81,6 +81,8 @@ const ja = {
     'merge-txt': { t: "TXT を結合", d: "複数の TXT ファイルを結合します。" },
     'merge-md': { t: "Markdown を結合", d: "複数の MD ファイルを結合します。" },
     'merge-pptx': { t: "PPTX を結合", d: "複数の PPTX ファイルを結合します。" },
+    'merge-xlsx': { t: "XLSX を結合", d: "複数の XLSX ファイルを結合します。" },
+    'merge-xls': { t: "XLS を結合", d: "複数の XLS ファイルを結合します。" },
     'merge-html': { t: "HTML を結合", d: "複数の HTML ファイルを結合します。" },
     'merge-epub': { t: "EPUB を結合", d: "複数の EPUB 書籍を 1 冊にまとめます。" },
     'merge-fb2': { t: "FB2 を結合", d: "複数の FB2 書籍を 1 冊にまとめます。" },

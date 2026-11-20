@@ -81,6 +81,8 @@ const es419 = {
     'merge-txt': { t: "Unir TXT", d: "Une varios archivos TXT." },
     'merge-md': { t: "Unir Markdown", d: "Une varios archivos MD." },
     'merge-pptx': { t: "Unir PPTX", d: "Une varios archivos PPTX." },
+    'merge-xlsx': { t: "Unir XLSX", d: "Une varios archivos XLSX." },
+    'merge-xls': { t: "Unir XLS", d: "Une varios archivos XLS." },
     'merge-html': { t: "Unir HTML", d: "Une varios archivos HTML." },
     'merge-epub': { t: "Unir EPUB", d: "Une varios libros EPUB en uno solo." },
     'merge-fb2': { t: "Unir FB2", d: "Une varios libros FB2 en uno solo." },
