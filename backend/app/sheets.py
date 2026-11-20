@@ -142,3 +142,8 @@ def merge_workbooks(paths: list[str], out_path: str) -> None:
     for path in paths[1:]:
         _add_book(base, load_workbook(path), taken)
     base.save(out_path)
+
+
+def frozen_sheets(path: str) -> list[str]:
+    """Titles of the sheets with frozen panes, in order."""
+    return [ws.title for ws in load_workbook(path).worksheets if ws.freeze_panes]

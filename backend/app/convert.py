@@ -36,7 +36,7 @@ from app.errors import DependencyMissing, EbookInputError, ErrorCode
 from app.media import video_to_mp3, video_to_mp4, video_to_webm
 from app.pdf_pptx import pdf_to_pptx
 from app.merge import convert_to_text_format, merge_to_pdf
-from app.sheets import merge_workbooks
+from app.sheets import frozen_sheets, merge_workbooks
 from app.word_merge import merge_docx
 from app.ocr import _ocr_png, available_ocr_lang, extract_pdf_text_cached, pdf_text_layer_is_broken
 from app.pdf_flow import (
@@ -406,8 +406,8 @@ def office_to_pdf(job: Job) -> None:
 
 def office_by_libreoffice(job: Job) -> None:
     """One office format to another straight through LibreOffice, which keeps
-    fonts, colours, tables and page layout: DOC -> DOCX (pandoc cannot read
-    .doc at all)."""
+    fonts, colours, tables, page layout, sheets and formulas: DOC -> DOCX
+    (pandoc cannot read .doc at all), XLSX -> XLS (nor spreadsheets)."""
     # A private directory: two conversions of the same upload must not
     # overwrite each other's LibreOffice output (it is named after the input).
     workdir = tempfile.mkdtemp(prefix="office_", dir=OUTPUT_DIR)
@@ -415,6 +415,15 @@ def office_by_libreoffice(job: Job) -> None:
         shutil.move(engine_libreoffice(job.in_path, workdir, job.out_ext), job.out_path)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
+
+
+def xlsx_to_xls(job: Job) -> None:
+    """XLSX -> XLS through LibreOffice, which keeps sheets, formulas and look
+    but writes no frozen panes into .xls: the user is told where they were."""
+    office_by_libreoffice(job)
+    frozen = frozen_sheets(job.in_path)
+    if frozen:
+        job.outcome.warn("Закріплені області не збережено (XLS з LibreOffice їх не містить): " + ", ".join(frozen))
 
 
 # How each audio/video source is named in messages ("TS to MP4", ...).
@@ -478,6 +487,7 @@ SINGLE: dict[tuple[str, str], Handler] = {
     ("html", "pdf"): html_to_pdf,
     ("htm", "pdf"): html_to_pdf,
     ("doc", "docx"): office_by_libreoffice,
+    ("xlsx", "xls"): xlsx_to_xls,
     **{(src, "pdf"): office_to_pdf for src in sorted(LIBREOFFICE_PDF_SOURCES - {"html", "htm"})},
     **{(ext, target): image_to_text for ext in IMAGE_EXTS + RAW_EXTS for target in ("txt", "md")},
     ("mp4", "mp3"): video_mp3,
